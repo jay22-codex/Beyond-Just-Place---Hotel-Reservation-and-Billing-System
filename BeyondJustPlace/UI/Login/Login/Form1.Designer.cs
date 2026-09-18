@@ -1,4 +1,4 @@
-﻿namespace UI
+﻿namespace Login
 {
     partial class Form1
     {
