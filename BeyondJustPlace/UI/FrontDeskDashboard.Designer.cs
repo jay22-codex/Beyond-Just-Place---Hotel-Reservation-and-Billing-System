@@ -32,7 +32,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.lblRole = new System.Windows.Forms.Label();
             this.btnDashboard = new System.Windows.Forms.Button();
-            this.btnAdmin = new System.Windows.Forms.Button();
+            this.btnReservation = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.btnLogin = new System.Windows.Forms.Button();
@@ -100,15 +100,15 @@
             this.btnDashboard.Text = "Dashboard";
             this.btnDashboard.UseVisualStyleBackColor = true;
             // 
-            // btnAdmin
+            // btnReservation
             // 
-            this.btnAdmin.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnAdmin.Location = new System.Drawing.Point(12, 99);
-            this.btnAdmin.Name = "btnAdmin";
-            this.btnAdmin.Size = new System.Drawing.Size(172, 37);
-            this.btnAdmin.TabIndex = 11;
-            this.btnAdmin.Text = "Reservation";
-            this.btnAdmin.UseVisualStyleBackColor = true;
+            this.btnReservation.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnReservation.Location = new System.Drawing.Point(12, 99);
+            this.btnReservation.Name = "btnReservation";
+            this.btnReservation.Size = new System.Drawing.Size(172, 37);
+            this.btnReservation.TabIndex = 11;
+            this.btnReservation.Text = "Reservation";
+            this.btnReservation.UseVisualStyleBackColor = true;
             // 
             // button1
             // 
@@ -325,7 +325,7 @@
             this.Controls.Add(this.btnLogin);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.button1);
-            this.Controls.Add(this.btnAdmin);
+            this.Controls.Add(this.btnReservation);
             this.Controls.Add(this.btnDashboard);
             this.Controls.Add(this.lblRole);
             this.Controls.Add(this.label1);
@@ -353,7 +353,7 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label lblRole;
         private System.Windows.Forms.Button btnDashboard;
-        private System.Windows.Forms.Button btnAdmin;
+        private System.Windows.Forms.Button btnReservation;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Button btnLogin;

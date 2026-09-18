@@ -41,7 +41,7 @@
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
-            this.listBox1 = new System.Windows.Forms.ListBox();
+            this.listBoxLatestActivity = new System.Windows.Forms.ListBox();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
@@ -182,7 +182,7 @@
             // groupBox4
             // 
             this.groupBox4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.groupBox4.Controls.Add(this.listBox1);
+            this.groupBox4.Controls.Add(this.listBoxLatestActivity);
             this.groupBox4.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox4.Location = new System.Drawing.Point(235, 184);
             this.groupBox4.Name = "groupBox4";
@@ -206,15 +206,15 @@
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Quick Links";
             // 
-            // listBox1
+            // listBoxLatestActivity
             // 
-            this.listBox1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.listBox1.FormattingEnabled = true;
-            this.listBox1.ItemHeight = 18;
-            this.listBox1.Location = new System.Drawing.Point(21, 33);
-            this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(250, 202);
-            this.listBox1.TabIndex = 0;
+            this.listBoxLatestActivity.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.listBoxLatestActivity.FormattingEnabled = true;
+            this.listBoxLatestActivity.ItemHeight = 18;
+            this.listBoxLatestActivity.Location = new System.Drawing.Point(21, 33);
+            this.listBoxLatestActivity.Name = "listBoxLatestActivity";
+            this.listBoxLatestActivity.Size = new System.Drawing.Size(250, 202);
+            this.listBoxLatestActivity.TabIndex = 0;
             // 
             // label3
             // 
@@ -354,7 +354,7 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.GroupBox groupBox4;
-        private System.Windows.Forms.ListBox listBox1;
+        private System.Windows.Forms.ListBox listBoxLatestActivity;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.Button button3;
