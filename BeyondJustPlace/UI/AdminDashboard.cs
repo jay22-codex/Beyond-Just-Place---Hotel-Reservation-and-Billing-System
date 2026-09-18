@@ -8,11 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Login
+namespace UI
 {
-    public partial class Form1 : Form
+    public partial class AdminDashboard : Form
     {
-        public Form1()
+        public AdminDashboard()
         {
             InitializeComponent();
         }
