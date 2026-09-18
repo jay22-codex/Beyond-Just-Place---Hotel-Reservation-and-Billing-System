@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using BusinessLogic.Repository;
 
 namespace UI
 {
@@ -12,44 +13,35 @@ namespace UI
 
         private void btnLogin_Click(object sender, EventArgs e)
         {
-            string username = txtUsername.Text;
-            string password = txtPassword.Text;
-
-            if (username == "" || password == "")
+            if (!cbAdmin.Checked && !cbFrontDesk.Checked)
             {
-                MessageBox.Show("Please enter username and password.");
+                MessageBox.Show("Please select Admin or Front Desk.");
+                return;
             }
-            else if (cbAdmin.Checked &&
-                     username == "Admin" &&
-                     password == "admin123")
-            {
-                MessageBox.Show("Login successful!");
 
+            UserRepository user = new UserRepository();
+
+            string role = user.Login(txtUsername.Text, txtPassword.Text);
+
+            if (role == "Admin" && cbAdmin.Checked)
+            {
                 AdminDashboard admin = new AdminDashboard();
                 admin.Show();
                 this.Hide();
             }
-            else if (cbFrontDesk.Checked &&
-                     username == "FrontDesk" &&
-                     password == "front123")
+            else if (role == "FrontDesk" && cbFrontDesk.Checked)
             {
-                MessageBox.Show("Login successful!");
-
                 FrontDeskDashboard frontDesk = new FrontDeskDashboard();
                 frontDesk.Show();
                 this.Hide();
             }
-            else if (!cbAdmin.Checked && !cbFrontDesk.Checked)
-            {
-                MessageBox.Show("Please select Admin or Front Desk.");
-            }
             else
             {
-                MessageBox.Show("Username or password is incorrect.");
+                MessageBox.Show("Invalid username, password, or role.");
             }
         }
 
-        private void chkAdmin_CheckedChanged(object sender, EventArgs e)
+        private void cbAdmin_CheckedChanged(object sender, EventArgs e)
         {
             if (cbAdmin.Checked)
             {
@@ -57,7 +49,7 @@ namespace UI
             }
         }
 
-        private void chkFrontDesk_CheckedChanged(object sender, EventArgs e)
+        private void cbFrontDesk_CheckedChanged(object sender, EventArgs e)
         {
             if (cbFrontDesk.Checked)
             {
