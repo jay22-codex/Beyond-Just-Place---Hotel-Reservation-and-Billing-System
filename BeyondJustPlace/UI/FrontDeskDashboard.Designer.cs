@@ -140,6 +140,7 @@
             this.btnLogin.TabIndex = 14;
             this.btnLogin.Text = "Logout";
             this.btnLogin.UseVisualStyleBackColor = false;
+            this.btnLogin.Click += new System.EventHandler(this.btnLogout_Click);
             // 
             // label2
             // 
