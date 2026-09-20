@@ -1,11 +1,12 @@
-﻿using System.Data.SqlClient;
+﻿using System.Configuration;
+using System.Data.SqlClient;
 
 namespace BusinessLogic.Repository
 {
     public class UserRepository
     {
-        string connectionString =
-            @"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=BeyondJustPlaceDB;Integrated Security=True";
+        private readonly string connectionString =
+            ConfigurationManager.ConnectionStrings["HotelDB"].ConnectionString;
 
         public string Login(string username, string password)
         {
@@ -14,7 +15,8 @@ namespace BusinessLogic.Repository
                 connection.Open();
 
                 string query =
-                    "SELECT Role FROM Users WHERE Username=@username AND Password=@password";
+                    "SELECT Role FROM dbo.Users " +
+                    "WHERE Username = @username AND Password = @password";
 
                 SqlCommand command = new SqlCommand(query, connection);
 
@@ -24,7 +26,9 @@ namespace BusinessLogic.Repository
                 object result = command.ExecuteScalar();
 
                 if (result != null)
+                {
                     return result.ToString();
+                }
 
                 return "";
             }
