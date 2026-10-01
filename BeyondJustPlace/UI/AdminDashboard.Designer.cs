@@ -30,7 +30,6 @@
         {
             this.splitter1 = new System.Windows.Forms.Splitter();
             this.btnDashboard = new System.Windows.Forms.Button();
-            this.btnAdmin = new System.Windows.Forms.Button();
             this.btnLogin = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.lblRole = new System.Windows.Forms.Label();
@@ -76,16 +75,6 @@
             this.btnDashboard.TabIndex = 4;
             this.btnDashboard.Text = "Dashboard";
             this.btnDashboard.UseVisualStyleBackColor = true;
-            // 
-            // btnAdmin
-            // 
-            this.btnAdmin.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnAdmin.Location = new System.Drawing.Point(12, 89);
-            this.btnAdmin.Name = "btnAdmin";
-            this.btnAdmin.Size = new System.Drawing.Size(165, 37);
-            this.btnAdmin.TabIndex = 5;
-            this.btnAdmin.Text = "Admin";
-            this.btnAdmin.UseVisualStyleBackColor = true;
             // 
             // btnLogin
             // 
@@ -317,7 +306,6 @@
             this.Controls.Add(this.lblRole);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.btnLogin);
-            this.Controls.Add(this.btnAdmin);
             this.Controls.Add(this.btnDashboard);
             this.Controls.Add(this.splitter1);
             this.Name = "AdminDashboard";
@@ -341,7 +329,6 @@
 
         private System.Windows.Forms.Splitter splitter1;
         private System.Windows.Forms.Button btnDashboard;
-        private System.Windows.Forms.Button btnAdmin;
         private System.Windows.Forms.Button btnLogin;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label lblRole;

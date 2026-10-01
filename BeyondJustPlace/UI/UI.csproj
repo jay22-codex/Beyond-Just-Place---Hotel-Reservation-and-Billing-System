@@ -47,12 +47,21 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Login -->
+    <Compile Include="FrontDesk-ReservationUI.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrontDesk-ReservationUI.Designer.cs">
+      <DependentUpon>FrontDesk-ReservationUI.cs</DependentUpon>
+    </Compile>
     <Compile Include="Login.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Login.Designer.cs">
       <DependentUpon>Login.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="FrontDesk-ReservationUI.resx">
+      <DependentUpon>FrontDesk-ReservationUI.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Login.resx">
       <DependentUpon>Login.cs</DependentUpon>
     </EmbeddedResource>
