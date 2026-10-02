@@ -47,6 +47,18 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Login -->
+    <Compile Include="FrontDesk-Billing-PaymentUI.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrontDesk-Billing-PaymentUI.Designer.cs">
+      <DependentUpon>FrontDesk-Billing-PaymentUI.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FrontDesk-CheckIn-CheckOut.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrontDesk-CheckIn-CheckOut.Designer.cs">
+      <DependentUpon>FrontDesk-CheckIn-CheckOut.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrontDesk-ReservationUI.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -59,6 +71,12 @@
     <Compile Include="Login.Designer.cs">
       <DependentUpon>Login.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="FrontDesk-Billing-PaymentUI.resx">
+      <DependentUpon>FrontDesk-Billing-PaymentUI.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FrontDesk-CheckIn-CheckOut.resx">
+      <DependentUpon>FrontDesk-CheckIn-CheckOut.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FrontDesk-ReservationUI.resx">
       <DependentUpon>FrontDesk-ReservationUI.cs</DependentUpon>
     </EmbeddedResource>
