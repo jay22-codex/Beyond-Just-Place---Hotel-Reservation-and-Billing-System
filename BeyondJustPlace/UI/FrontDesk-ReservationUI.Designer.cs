@@ -29,6 +29,8 @@
         private void InitializeComponent()
         {
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.txtContactNumber = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.button3 = new System.Windows.Forms.Button();
             this.lblRole = new System.Windows.Forms.Label();
@@ -40,27 +42,25 @@
             this.label2 = new System.Windows.Forms.Label();
             this.btnBackReservation = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.btnCheckAvailability = new System.Windows.Forms.Button();
-            this.label3 = new System.Windows.Forms.Label();
-            this.txtContactNumber = new System.Windows.Forms.TextBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.dateTimePickerCheckIn = new System.Windows.Forms.DateTimePicker();
-            this.dateTimePickerCheckOut = new System.Windows.Forms.DateTimePicker();
-            this.label6 = new System.Windows.Forms.Label();
-            this.cmbRoomType = new System.Windows.Forms.ComboBox();
             this.listBoxAvailability = new System.Windows.Forms.ListBox();
+            this.cmbRoomType = new System.Windows.Forms.ComboBox();
+            this.label6 = new System.Windows.Forms.Label();
+            this.dateTimePickerCheckOut = new System.Windows.Forms.DateTimePicker();
+            this.dateTimePickerCheckIn = new System.Windows.Forms.DateTimePicker();
+            this.label5 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
+            this.btnCheckAvailability = new System.Windows.Forms.Button();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.label7 = new System.Windows.Forms.Label();
-            this.lblGuestname = new System.Windows.Forms.Label();
-            this.label8 = new System.Windows.Forms.Label();
-            this.lblStayDate = new System.Windows.Forms.Label();
-            this.label9 = new System.Windows.Forms.Label();
-            this.lblRoomOutput = new System.Windows.Forms.Label();
-            this.label10 = new System.Windows.Forms.Label();
-            this.cmbReservationStatus = new System.Windows.Forms.ComboBox();
-            this.btnCreateReservation = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.btnCreateReservation = new System.Windows.Forms.Button();
+            this.cmbReservationStatus = new System.Windows.Forms.ComboBox();
+            this.label10 = new System.Windows.Forms.Label();
+            this.lblRoomOutput = new System.Windows.Forms.Label();
+            this.label9 = new System.Windows.Forms.Label();
+            this.lblStayDate = new System.Windows.Forms.Label();
+            this.label8 = new System.Windows.Forms.Label();
+            this.lblGuestname = new System.Windows.Forms.Label();
+            this.label7 = new System.Windows.Forms.Label();
             this.groupBox4.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -87,6 +87,26 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Search/Select Guest";
             // 
+            // txtContactNumber
+            // 
+            this.txtContactNumber.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtContactNumber.Location = new System.Drawing.Point(210, 362);
+            this.txtContactNumber.Name = "txtContactNumber";
+            this.txtContactNumber.Size = new System.Drawing.Size(183, 38);
+            this.txtContactNumber.TabIndex = 30;
+            this.txtContactNumber.TextChanged += new System.EventHandler(this.txtContactNumber_TextChanged);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label3.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(218, 343);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(105, 16);
+            this.label3.TabIndex = 29;
+            this.label3.Text = "Contact Number:";
+            // 
             // label1
             // 
             this.label1.AutoSize = true;
@@ -108,6 +128,7 @@
             this.button3.TabIndex = 27;
             this.button3.Text = "+ Create Guest Record";
             this.button3.UseVisualStyleBackColor = false;
+            this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
             // lblRole
             // 
@@ -127,6 +148,7 @@
             this.txtGuestName.Name = "txtGuestName";
             this.txtGuestName.Size = new System.Drawing.Size(183, 38);
             this.txtGuestName.TabIndex = 25;
+            this.txtGuestName.TextChanged += new System.EventHandler(this.txtGuestName_TextChanged);
             // 
             // txtUsername
             // 
@@ -135,6 +157,7 @@
             this.txtUsername.Name = "txtUsername";
             this.txtUsername.Size = new System.Drawing.Size(270, 38);
             this.txtUsername.TabIndex = 24;
+            this.txtUsername.TextChanged += new System.EventHandler(this.txtUsername_TextChanged);
             // 
             // btnSelectguest
             // 
@@ -146,6 +169,7 @@
             this.btnSelectguest.TabIndex = 21;
             this.btnSelectguest.Text = "Select";
             this.btnSelectguest.UseVisualStyleBackColor = false;
+            this.btnSelectguest.Click += new System.EventHandler(this.btnSelectguest_Click);
             // 
             // btnSearch
             // 
@@ -157,6 +181,7 @@
             this.btnSearch.TabIndex = 20;
             this.btnSearch.Text = "Search";
             this.btnSearch.UseVisualStyleBackColor = false;
+            this.btnSearch.Click += new System.EventHandler(this.btnSearch_Click);
             // 
             // listBoxGuest
             // 
@@ -189,6 +214,7 @@
             this.btnBackReservation.TabIndex = 21;
             this.btnBackReservation.Text = "Back to Dashboard";
             this.btnBackReservation.UseVisualStyleBackColor = false;
+            this.btnBackReservation.Click += new System.EventHandler(this.btnBackReservation_Click);
             // 
             // groupBox1
             // 
@@ -209,71 +235,25 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Select Date/Availability Check";
             // 
-            // btnCheckAvailability
+            // listBoxAvailability
             // 
-            this.btnCheckAvailability.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.btnCheckAvailability.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnCheckAvailability.Location = new System.Drawing.Point(170, 156);
-            this.btnCheckAvailability.Name = "btnCheckAvailability";
-            this.btnCheckAvailability.Size = new System.Drawing.Size(172, 51);
-            this.btnCheckAvailability.TabIndex = 20;
-            this.btnCheckAvailability.Text = "Check Availability";
-            this.btnCheckAvailability.UseVisualStyleBackColor = false;
+            this.listBoxAvailability.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.listBoxAvailability.FormattingEnabled = true;
+            this.listBoxAvailability.ItemHeight = 18;
+            this.listBoxAvailability.Location = new System.Drawing.Point(20, 222);
+            this.listBoxAvailability.Name = "listBoxAvailability";
+            this.listBoxAvailability.Size = new System.Drawing.Size(390, 202);
+            this.listBoxAvailability.TabIndex = 31;
             // 
-            // label3
+            // cmbRoomType
             // 
-            this.label3.AutoSize = true;
-            this.label3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label3.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(218, 343);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(105, 16);
-            this.label3.TabIndex = 29;
-            this.label3.Text = "Contact Number:";
-            // 
-            // txtContactNumber
-            // 
-            this.txtContactNumber.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtContactNumber.Location = new System.Drawing.Point(210, 362);
-            this.txtContactNumber.Name = "txtContactNumber";
-            this.txtContactNumber.Size = new System.Drawing.Size(183, 38);
-            this.txtContactNumber.TabIndex = 30;
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label4.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(30, 45);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(93, 16);
-            this.label4.TabIndex = 31;
-            this.label4.Text = "Check-in Date:";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label5.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label5.Location = new System.Drawing.Point(30, 101);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(101, 16);
-            this.label5.TabIndex = 32;
-            this.label5.Text = "Check-out Date:";
-            // 
-            // dateTimePickerCheckIn
-            // 
-            this.dateTimePickerCheckIn.Location = new System.Drawing.Point(20, 65);
-            this.dateTimePickerCheckIn.Name = "dateTimePickerCheckIn";
-            this.dateTimePickerCheckIn.Size = new System.Drawing.Size(284, 24);
-            this.dateTimePickerCheckIn.TabIndex = 33;
-            // 
-            // dateTimePickerCheckOut
-            // 
-            this.dateTimePickerCheckOut.Location = new System.Drawing.Point(20, 120);
-            this.dateTimePickerCheckOut.Name = "dateTimePickerCheckOut";
-            this.dateTimePickerCheckOut.Size = new System.Drawing.Size(284, 24);
-            this.dateTimePickerCheckOut.TabIndex = 34;
+            this.cmbRoomType.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cmbRoomType.FormattingEnabled = true;
+            this.cmbRoomType.Location = new System.Drawing.Point(20, 175);
+            this.cmbRoomType.Name = "cmbRoomType";
+            this.cmbRoomType.Size = new System.Drawing.Size(144, 32);
+            this.cmbRoomType.TabIndex = 36;
+            this.cmbRoomType.SelectedIndexChanged += new System.EventHandler(this.cmbRoomType_SelectedIndexChanged);
             // 
             // label6
             // 
@@ -286,24 +266,55 @@
             this.label6.TabIndex = 35;
             this.label6.Text = "Room Type:";
             // 
-            // cmbRoomType
+            // dateTimePickerCheckOut
             // 
-            this.cmbRoomType.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmbRoomType.FormattingEnabled = true;
-            this.cmbRoomType.Location = new System.Drawing.Point(20, 175);
-            this.cmbRoomType.Name = "cmbRoomType";
-            this.cmbRoomType.Size = new System.Drawing.Size(144, 32);
-            this.cmbRoomType.TabIndex = 36;
+            this.dateTimePickerCheckOut.Location = new System.Drawing.Point(20, 120);
+            this.dateTimePickerCheckOut.Name = "dateTimePickerCheckOut";
+            this.dateTimePickerCheckOut.Size = new System.Drawing.Size(284, 24);
+            this.dateTimePickerCheckOut.TabIndex = 34;
+            this.dateTimePickerCheckOut.ValueChanged += new System.EventHandler(this.dateTimePickerCheckOut_ValueChanged);
             // 
-            // listBoxAvailability
+            // dateTimePickerCheckIn
             // 
-            this.listBoxAvailability.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.listBoxAvailability.FormattingEnabled = true;
-            this.listBoxAvailability.ItemHeight = 18;
-            this.listBoxAvailability.Location = new System.Drawing.Point(20, 222);
-            this.listBoxAvailability.Name = "listBoxAvailability";
-            this.listBoxAvailability.Size = new System.Drawing.Size(390, 202);
-            this.listBoxAvailability.TabIndex = 31;
+            this.dateTimePickerCheckIn.Location = new System.Drawing.Point(20, 65);
+            this.dateTimePickerCheckIn.Name = "dateTimePickerCheckIn";
+            this.dateTimePickerCheckIn.Size = new System.Drawing.Size(284, 24);
+            this.dateTimePickerCheckIn.TabIndex = 33;
+            this.dateTimePickerCheckIn.ValueChanged += new System.EventHandler(this.dateTimePickerCheckIn_ValueChanged);
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label5.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label5.Location = new System.Drawing.Point(30, 101);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(101, 16);
+            this.label5.TabIndex = 32;
+            this.label5.Text = "Check-out Date:";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label4.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label4.Location = new System.Drawing.Point(30, 45);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(93, 16);
+            this.label4.TabIndex = 31;
+            this.label4.Text = "Check-in Date:";
+            // 
+            // btnCheckAvailability
+            // 
+            this.btnCheckAvailability.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnCheckAvailability.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCheckAvailability.Location = new System.Drawing.Point(170, 156);
+            this.btnCheckAvailability.Name = "btnCheckAvailability";
+            this.btnCheckAvailability.Size = new System.Drawing.Size(172, 51);
+            this.btnCheckAvailability.TabIndex = 20;
+            this.btnCheckAvailability.Text = "Check Availability";
+            this.btnCheckAvailability.UseVisualStyleBackColor = false;
+            this.btnCheckAvailability.Click += new System.EventHandler(this.btnCheckAvailability_Click);
             // 
             // groupBox2
             // 
@@ -326,71 +337,39 @@
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Reservation Summary";
             // 
-            // label7
+            // btnCancel
             // 
-            this.label7.AutoSize = true;
-            this.label7.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label7.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label7.Location = new System.Drawing.Point(18, 34);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(82, 16);
-            this.label7.TabIndex = 31;
-            this.label7.Text = "Guest name:";
+            this.btnCancel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnCancel.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCancel.Location = new System.Drawing.Point(771, 115);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(114, 32);
+            this.btnCancel.TabIndex = 38;
+            this.btnCancel.Text = "Cancel";
+            this.btnCancel.UseVisualStyleBackColor = false;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
-            // lblGuestname
+            // btnCreateReservation
             // 
-            this.lblGuestname.AutoSize = true;
-            this.lblGuestname.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.lblGuestname.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblGuestname.Location = new System.Drawing.Point(144, 34);
-            this.lblGuestname.Name = "lblGuestname";
-            this.lblGuestname.Size = new System.Drawing.Size(49, 16);
-            this.lblGuestname.TabIndex = 32;
-            this.lblGuestname.Text = "Output";
+            this.btnCreateReservation.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnCreateReservation.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCreateReservation.Location = new System.Drawing.Point(644, 115);
+            this.btnCreateReservation.Name = "btnCreateReservation";
+            this.btnCreateReservation.Size = new System.Drawing.Size(114, 32);
+            this.btnCreateReservation.TabIndex = 31;
+            this.btnCreateReservation.Text = "Create";
+            this.btnCreateReservation.UseVisualStyleBackColor = false;
+            this.btnCreateReservation.Click += new System.EventHandler(this.btnCreateReservation_Click);
             // 
-            // label8
+            // cmbReservationStatus
             // 
-            this.label8.AutoSize = true;
-            this.label8.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label8.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label8.Location = new System.Drawing.Point(316, 34);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(38, 16);
-            this.label8.TabIndex = 33;
-            this.label8.Text = "Stay:";
-            // 
-            // lblStayDate
-            // 
-            this.lblStayDate.AutoSize = true;
-            this.lblStayDate.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.lblStayDate.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblStayDate.Location = new System.Drawing.Point(400, 34);
-            this.lblStayDate.Name = "lblStayDate";
-            this.lblStayDate.Size = new System.Drawing.Size(49, 16);
-            this.lblStayDate.TabIndex = 34;
-            this.lblStayDate.Text = "Output";
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label9.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label9.Location = new System.Drawing.Point(605, 34);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(45, 16);
-            this.label9.TabIndex = 35;
-            this.label9.Text = "Room:";
-            // 
-            // lblRoomOutput
-            // 
-            this.lblRoomOutput.AutoSize = true;
-            this.lblRoomOutput.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.lblRoomOutput.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblRoomOutput.Location = new System.Drawing.Point(709, 34);
-            this.lblRoomOutput.Name = "lblRoomOutput";
-            this.lblRoomOutput.Size = new System.Drawing.Size(49, 16);
-            this.lblRoomOutput.TabIndex = 36;
-            this.lblRoomOutput.Text = "Output";
+            this.cmbReservationStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cmbReservationStatus.FormattingEnabled = true;
+            this.cmbReservationStatus.Location = new System.Drawing.Point(144, 55);
+            this.cmbReservationStatus.Name = "cmbReservationStatus";
+            this.cmbReservationStatus.Size = new System.Drawing.Size(144, 32);
+            this.cmbReservationStatus.TabIndex = 37;
+            this.cmbReservationStatus.SelectedIndexChanged += new System.EventHandler(this.cmbReservationStatus_SelectedIndexChanged);
             // 
             // label10
             // 
@@ -403,36 +382,71 @@
             this.label10.TabIndex = 37;
             this.label10.Text = "Reservation Status:";
             // 
-            // cmbReservationStatus
+            // lblRoomOutput
             // 
-            this.cmbReservationStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmbReservationStatus.FormattingEnabled = true;
-            this.cmbReservationStatus.Location = new System.Drawing.Point(144, 55);
-            this.cmbReservationStatus.Name = "cmbReservationStatus";
-            this.cmbReservationStatus.Size = new System.Drawing.Size(144, 32);
-            this.cmbReservationStatus.TabIndex = 37;
+            this.lblRoomOutput.AutoSize = true;
+            this.lblRoomOutput.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.lblRoomOutput.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblRoomOutput.Location = new System.Drawing.Point(709, 34);
+            this.lblRoomOutput.Name = "lblRoomOutput";
+            this.lblRoomOutput.Size = new System.Drawing.Size(49, 16);
+            this.lblRoomOutput.TabIndex = 36;
+            this.lblRoomOutput.Text = "Output";
             // 
-            // btnCreateReservation
+            // label9
             // 
-            this.btnCreateReservation.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.btnCreateReservation.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnCreateReservation.Location = new System.Drawing.Point(644, 115);
-            this.btnCreateReservation.Name = "btnCreateReservation";
-            this.btnCreateReservation.Size = new System.Drawing.Size(114, 32);
-            this.btnCreateReservation.TabIndex = 31;
-            this.btnCreateReservation.Text = "Create";
-            this.btnCreateReservation.UseVisualStyleBackColor = false;
+            this.label9.AutoSize = true;
+            this.label9.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label9.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label9.Location = new System.Drawing.Point(605, 34);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(45, 16);
+            this.label9.TabIndex = 35;
+            this.label9.Text = "Room:";
             // 
-            // btnCancel
+            // lblStayDate
             // 
-            this.btnCancel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.btnCancel.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnCancel.Location = new System.Drawing.Point(771, 115);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(114, 32);
-            this.btnCancel.TabIndex = 38;
-            this.btnCancel.Text = "Cancel";
-            this.btnCancel.UseVisualStyleBackColor = false;
+            this.lblStayDate.AutoSize = true;
+            this.lblStayDate.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.lblStayDate.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblStayDate.Location = new System.Drawing.Point(400, 34);
+            this.lblStayDate.Name = "lblStayDate";
+            this.lblStayDate.Size = new System.Drawing.Size(49, 16);
+            this.lblStayDate.TabIndex = 34;
+            this.lblStayDate.Text = "Output";
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label8.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label8.Location = new System.Drawing.Point(316, 34);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(38, 16);
+            this.label8.TabIndex = 33;
+            this.label8.Text = "Stay:";
+            // 
+            // lblGuestname
+            // 
+            this.lblGuestname.AutoSize = true;
+            this.lblGuestname.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.lblGuestname.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblGuestname.Location = new System.Drawing.Point(144, 34);
+            this.lblGuestname.Name = "lblGuestname";
+            this.lblGuestname.Size = new System.Drawing.Size(49, 16);
+            this.lblGuestname.TabIndex = 32;
+            this.lblGuestname.Text = "Output";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label7.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label7.Location = new System.Drawing.Point(18, 34);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(82, 16);
+            this.label7.TabIndex = 31;
+            this.label7.Text = "Guest name:";
             // 
             // FrontDesk_ReservationUI
             // 
@@ -447,6 +461,7 @@
             this.Controls.Add(this.groupBox4);
             this.Name = "FrontDesk_ReservationUI";
             this.Text = "FrontDesk_ReservationUI";
+            this.Load += new System.EventHandler(this.FrontDesk_ReservationUI_Load_1);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.groupBox1.ResumeLayout(false);

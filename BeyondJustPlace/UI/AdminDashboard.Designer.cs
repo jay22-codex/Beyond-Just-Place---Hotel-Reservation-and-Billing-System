@@ -310,6 +310,7 @@
             this.Controls.Add(this.splitter1);
             this.Name = "AdminDashboard";
             this.Text = "AdminDashboard";
+            this.Load += new System.EventHandler(this.AdminDashboard_Load);
             this.groupBoxTotalReservation.ResumeLayout(false);
             this.groupBoxTotalReservation.PerformLayout();
             this.groupBox1.ResumeLayout(false);
