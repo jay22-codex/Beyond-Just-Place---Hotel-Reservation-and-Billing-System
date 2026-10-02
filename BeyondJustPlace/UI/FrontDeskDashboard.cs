@@ -137,5 +137,20 @@ namespace UI
 
             reservationUI.Show();
         }
+
+        private void btnBilling_Click(object sender, EventArgs e)
+        {
+            FrontDesk_Billing_PaymentUI payment =
+                new FrontDesk_Billing_PaymentUI();
+            payment.Show();
+        }
+
+        private void btnCheckinCheckout_Click(object sender, EventArgs e)
+        {
+            FrontDesk_CheckIn_CheckOut checkIn_CheckOut =
+                new FrontDesk_CheckIn_CheckOut();
+
+            checkIn_CheckOut.Show();
+        }
     }
 }
