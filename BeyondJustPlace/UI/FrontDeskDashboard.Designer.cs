@@ -47,7 +47,7 @@
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.button3 = new System.Windows.Forms.Button();
             this.button5 = new System.Windows.Forms.Button();
-            this.button6 = new System.Windows.Forms.Button();
+            this.btnReservation = new System.Windows.Forms.Button();
             this.groupBoxTotalReservation.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -239,7 +239,7 @@
             this.groupBox5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.groupBox5.Controls.Add(this.button3);
             this.groupBox5.Controls.Add(this.button5);
-            this.groupBox5.Controls.Add(this.button6);
+            this.groupBox5.Controls.Add(this.btnReservation);
             this.groupBox5.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox5.Location = new System.Drawing.Point(545, 194);
             this.groupBox5.Name = "groupBox5";
@@ -268,15 +268,16 @@
             this.button5.Text = "Check-in/Check-out";
             this.button5.UseVisualStyleBackColor = false;
             // 
-            // button6
+            // btnReservation
             // 
-            this.button6.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.button6.Location = new System.Drawing.Point(29, 33);
-            this.button6.Name = "button6";
-            this.button6.Size = new System.Drawing.Size(117, 101);
-            this.button6.TabIndex = 0;
-            this.button6.Text = "Reservation";
-            this.button6.UseVisualStyleBackColor = false;
+            this.btnReservation.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnReservation.Location = new System.Drawing.Point(29, 33);
+            this.btnReservation.Name = "btnReservation";
+            this.btnReservation.Size = new System.Drawing.Size(117, 101);
+            this.btnReservation.TabIndex = 0;
+            this.btnReservation.Text = "Reservation";
+            this.btnReservation.UseVisualStyleBackColor = false;
+            this.btnReservation.Click += new System.EventHandler(this.btnReservation_Click);
             // 
             // FrontDeskDashboard
             // 
@@ -297,6 +298,7 @@
             this.Controls.Add(this.splitter1);
             this.Name = "FrontDeskDashboard";
             this.Text = "FrontDeskDashboard";
+            this.Load += new System.EventHandler(this.FrontDeskDashboard_Load);
             this.groupBoxTotalReservation.ResumeLayout(false);
             this.groupBoxTotalReservation.PerformLayout();
             this.groupBox1.ResumeLayout(false);
@@ -333,6 +335,6 @@
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button5;
-        private System.Windows.Forms.Button button6;
+        private System.Windows.Forms.Button btnReservation;
     }
 }
