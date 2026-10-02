@@ -42,8 +42,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BillingService.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Repository\BillingRepository.cs" />
     <Compile Include="Repository\ReservationRepository.cs" />
     <Compile Include="Repository\UserRepository.cs" />
     <Compile Include="ReservationService.cs" />

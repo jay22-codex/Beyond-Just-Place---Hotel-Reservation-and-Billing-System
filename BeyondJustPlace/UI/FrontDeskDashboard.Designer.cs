@@ -45,8 +45,8 @@
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.listBox1 = new System.Windows.Forms.ListBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
-            this.button3 = new System.Windows.Forms.Button();
-            this.button5 = new System.Windows.Forms.Button();
+            this.btnBilling = new System.Windows.Forms.Button();
+            this.btnCheckinCheckout = new System.Windows.Forms.Button();
             this.btnReservation = new System.Windows.Forms.Button();
             this.groupBoxTotalReservation.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -237,8 +237,8 @@
             // groupBox5
             // 
             this.groupBox5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.groupBox5.Controls.Add(this.button3);
-            this.groupBox5.Controls.Add(this.button5);
+            this.groupBox5.Controls.Add(this.btnBilling);
+            this.groupBox5.Controls.Add(this.btnCheckinCheckout);
             this.groupBox5.Controls.Add(this.btnReservation);
             this.groupBox5.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox5.Location = new System.Drawing.Point(545, 194);
@@ -248,25 +248,27 @@
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Quick Links";
             // 
-            // button3
+            // btnBilling
             // 
-            this.button3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.button3.Location = new System.Drawing.Point(89, 140);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(117, 101);
-            this.button3.TabIndex = 2;
-            this.button3.Text = "Billing";
-            this.button3.UseVisualStyleBackColor = false;
+            this.btnBilling.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnBilling.Location = new System.Drawing.Point(89, 140);
+            this.btnBilling.Name = "btnBilling";
+            this.btnBilling.Size = new System.Drawing.Size(117, 101);
+            this.btnBilling.TabIndex = 2;
+            this.btnBilling.Text = "Billing";
+            this.btnBilling.UseVisualStyleBackColor = false;
+            this.btnBilling.Click += new System.EventHandler(this.btnBilling_Click);
             // 
-            // button5
+            // btnCheckinCheckout
             // 
-            this.button5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.button5.Location = new System.Drawing.Point(152, 33);
-            this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(117, 101);
-            this.button5.TabIndex = 1;
-            this.button5.Text = "Check-in/Check-out";
-            this.button5.UseVisualStyleBackColor = false;
+            this.btnCheckinCheckout.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnCheckinCheckout.Location = new System.Drawing.Point(152, 33);
+            this.btnCheckinCheckout.Name = "btnCheckinCheckout";
+            this.btnCheckinCheckout.Size = new System.Drawing.Size(117, 101);
+            this.btnCheckinCheckout.TabIndex = 1;
+            this.btnCheckinCheckout.Text = "Check-in/Check-out";
+            this.btnCheckinCheckout.UseVisualStyleBackColor = false;
+            this.btnCheckinCheckout.Click += new System.EventHandler(this.btnCheckinCheckout_Click);
             // 
             // btnReservation
             // 
@@ -333,8 +335,8 @@
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.ListBox listBox1;
         private System.Windows.Forms.GroupBox groupBox5;
-        private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.Button button5;
+        private System.Windows.Forms.Button btnBilling;
+        private System.Windows.Forms.Button btnCheckinCheckout;
         private System.Windows.Forms.Button btnReservation;
     }
 }

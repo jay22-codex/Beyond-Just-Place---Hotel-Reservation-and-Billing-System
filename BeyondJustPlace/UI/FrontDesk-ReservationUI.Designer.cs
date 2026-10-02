@@ -42,6 +42,13 @@
             this.label2 = new System.Windows.Forms.Label();
             this.btnBackReservation = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.btnSelectRoom = new System.Windows.Forms.Button();
+            this.label11 = new System.Windows.Forms.Label();
+            this.dataGridViewRoom = new System.Windows.Forms.DataGridView();
+            this.columnRoomNumber = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.columnRoomType = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.columnRate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.columnStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.cmbRoomType = new System.Windows.Forms.ComboBox();
             this.label6 = new System.Windows.Forms.Label();
             this.dateTimePickerCheckOut = new System.Windows.Forms.DateTimePicker();
@@ -60,17 +67,10 @@
             this.label8 = new System.Windows.Forms.Label();
             this.lblGuestname = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
-            this.dataGridViewRoom = new System.Windows.Forms.DataGridView();
-            this.columnRoomNumber = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.columnRoomType = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.columnRate = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.columnStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.label11 = new System.Windows.Forms.Label();
-            this.button1 = new System.Windows.Forms.Button();
             this.groupBox4.SuspendLayout();
             this.groupBox1.SuspendLayout();
-            this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRoom)).BeginInit();
+            this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBox4
@@ -226,7 +226,7 @@
             // groupBox1
             // 
             this.groupBox1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.groupBox1.Controls.Add(this.button1);
+            this.groupBox1.Controls.Add(this.btnSelectRoom);
             this.groupBox1.Controls.Add(this.label11);
             this.groupBox1.Controls.Add(this.dataGridViewRoom);
             this.groupBox1.Controls.Add(this.cmbRoomType);
@@ -243,6 +243,63 @@
             this.groupBox1.TabIndex = 21;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Select Date/Availability Check";
+            // 
+            // btnSelectRoom
+            // 
+            this.btnSelectRoom.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnSelectRoom.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnSelectRoom.Location = new System.Drawing.Point(332, 406);
+            this.btnSelectRoom.Name = "btnSelectRoom";
+            this.btnSelectRoom.Size = new System.Drawing.Size(140, 32);
+            this.btnSelectRoom.TabIndex = 31;
+            this.btnSelectRoom.Text = "Select Room";
+            this.btnSelectRoom.UseVisualStyleBackColor = false;
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label11.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label11.Location = new System.Drawing.Point(30, 224);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(100, 16);
+            this.label11.TabIndex = 38;
+            this.label11.Text = "Available Room:";
+            // 
+            // dataGridViewRoom
+            // 
+            this.dataGridViewRoom.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridViewRoom.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.columnRoomNumber,
+            this.columnRoomType,
+            this.columnRate,
+            this.columnStatus});
+            this.dataGridViewRoom.Location = new System.Drawing.Point(20, 243);
+            this.dataGridViewRoom.Name = "dataGridViewRoom";
+            this.dataGridViewRoom.Size = new System.Drawing.Size(452, 157);
+            this.dataGridViewRoom.TabIndex = 37;
+            // 
+            // columnRoomNumber
+            // 
+            this.columnRoomNumber.HeaderText = "Room Number";
+            this.columnRoomNumber.Name = "columnRoomNumber";
+            this.columnRoomNumber.ReadOnly = true;
+            this.columnRoomNumber.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            // 
+            // columnRoomType
+            // 
+            this.columnRoomType.HeaderText = "Room Type";
+            this.columnRoomType.Name = "columnRoomType";
+            // 
+            // columnRate
+            // 
+            this.columnRate.HeaderText = "Rate";
+            this.columnRate.Name = "columnRate";
+            // 
+            // columnStatus
+            // 
+            this.columnStatus.HeaderText = "Status";
+            this.columnStatus.Name = "columnStatus";
             // 
             // cmbRoomType
             // 
@@ -447,63 +504,6 @@
             this.label7.TabIndex = 31;
             this.label7.Text = "Guest name:";
             // 
-            // dataGridViewRoom
-            // 
-            this.dataGridViewRoom.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridViewRoom.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.columnRoomNumber,
-            this.columnRoomType,
-            this.columnRate,
-            this.columnStatus});
-            this.dataGridViewRoom.Location = new System.Drawing.Point(20, 243);
-            this.dataGridViewRoom.Name = "dataGridViewRoom";
-            this.dataGridViewRoom.Size = new System.Drawing.Size(452, 157);
-            this.dataGridViewRoom.TabIndex = 37;
-            // 
-            // columnRoomNumber
-            // 
-            this.columnRoomNumber.HeaderText = "Room Number";
-            this.columnRoomNumber.Name = "columnRoomNumber";
-            this.columnRoomNumber.ReadOnly = true;
-            this.columnRoomNumber.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            // 
-            // columnRoomType
-            // 
-            this.columnRoomType.HeaderText = "Room Type";
-            this.columnRoomType.Name = "columnRoomType";
-            // 
-            // columnRate
-            // 
-            this.columnRate.HeaderText = "Rate";
-            this.columnRate.Name = "columnRate";
-            // 
-            // columnStatus
-            // 
-            this.columnStatus.HeaderText = "Status";
-            this.columnStatus.Name = "columnStatus";
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label11.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label11.Location = new System.Drawing.Point(30, 224);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(100, 16);
-            this.label11.TabIndex = 38;
-            this.label11.Text = "Available Room:";
-            // 
-            // button1
-            // 
-            this.button1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.button1.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.Location = new System.Drawing.Point(332, 406);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(140, 32);
-            this.button1.TabIndex = 31;
-            this.button1.Text = "Select Room";
-            this.button1.UseVisualStyleBackColor = false;
-            // 
             // FrontDesk_ReservationUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -522,9 +522,9 @@
             this.groupBox4.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRoom)).EndInit();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewRoom)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -569,7 +569,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn columnRoomType;
         private System.Windows.Forms.DataGridViewTextBoxColumn columnRate;
         private System.Windows.Forms.DataGridViewTextBoxColumn columnStatus;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btnSelectRoom;
         private System.Windows.Forms.Label label11;
     }
 }
