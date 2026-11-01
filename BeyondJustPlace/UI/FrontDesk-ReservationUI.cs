@@ -1,4 +1,8 @@
-﻿using System;
+﻿
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Mail;
 using System.Windows.Forms;
 using BusinessLogic;
 using Model;
@@ -7,432 +11,624 @@ namespace UI
 {
     public partial class FrontDesk_ReservationUI : Form
     {
-        private ReservationService service = new ReservationService();
+        private readonly ReservationService reservationService =
+            new ReservationService();
+
+        private readonly ReservationDetailsService details =
+            new ReservationDetailsService();
 
         private Guest selectedGuest;
-        private Room selectedRoom;
-
-        private Timer refreshTimer = new Timer();
+        private AvailableRoomInfo selectedRoom;
+        private Button btnNewGuest;
 
         public FrontDesk_ReservationUI()
         {
             InitializeComponent();
 
-            this.Load += FrontDesk_ReservationUI_Load;
+            Load += Reservation_Load;
 
-            listBoxAvailability.SelectedIndexChanged +=
-                listBoxAvailability_SelectedIndexChanged;
+            btnSaveGuest.Click += SaveGuest_Click;
+            btnSearchGuest.Click += SearchGuest_Click;
+            btnSelectGuest.Click += SelectGuest_Click;
+            btnEditGuest.Click += SelectGuest_Click;
 
-            refreshTimer.Interval = 5000;
-            refreshTimer.Tick += RefreshTimer_Tick;
-        }
+            btnCheckAvailability.Click += CheckAvailability_Click;
+            btnSelectRoom.Click += SelectRoom_Click;
+            btnSelectPreferredRoom.Click += PreferredRoom_Click;
 
-        private void FrontDesk_ReservationUI_Load(object sender, EventArgs e)
-        {
-            LoadRoomTypes();
+            btnCreateReservation.Click += CreateReservation_Click;
+            btnCancelReservation.Click += CancelReservation_Click;
 
-            cmbReservationStatus.Items.Clear();
-            cmbReservationStatus.Items.Add("Pending");
-            cmbReservationStatus.Items.Add("Confirmed");
-            cmbReservationStatus.SelectedIndex = 0;
+            listBoxGuest.DoubleClick += SelectGuest_Click;
 
-            dateTimePickerCheckIn.Value = DateTime.Today;
-            dateTimePickerCheckOut.Value = DateTime.Today.AddDays(1);
-
-            LoadGuests();
-
-            refreshTimer.Start();
-        }
-
-        private void RefreshTimer_Tick(object sender, EventArgs e)
-        {
-            LoadGuests();
-
-            if (cmbRoomType.SelectedIndex >= 0)
+            dgvAvailableRooms.CellDoubleClick += (s, e) =>
             {
-                LoadAvailableRooms(false);
+                if (e.RowIndex >= 0)
+                    SelectRoom();
+            };
+
+            cmbPreferredRoomType.SelectedIndexChanged +=
+                PreferredTypeChanged;
+
+            cmbRoomType.SelectedIndexChanged +=
+                (s, e) => ClearRoom();
+
+            dtpCheckIn.ValueChanged += (s, e) =>
+            {
+                ClearRoom();
+                UpdateSummary();
+            };
+
+            dtpCheckOut.ValueChanged += (s, e) =>
+            {
+                ClearRoom();
+                UpdateSummary();
+            };
+
+            txtGuestName.TextChanged +=
+                (s, e) => UpdateSummary();
+
+            dgvAvailableRooms.AllowUserToAddRows = false;
+            dgvAvailableRooms.ReadOnly = true;
+            dgvAvailableRooms.MultiSelect = false;
+
+            dgvAvailableRooms.SelectionMode =
+                DataGridViewSelectionMode.FullRowSelect;
+
+            dgvAvailableRooms.AutoSizeColumnsMode =
+                DataGridViewAutoSizeColumnsMode.Fill;
+        }
+
+        private void Reservation_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                dtpCheckIn.Value = DateTime.Today;
+                dtpCheckOut.Value = DateTime.Today.AddDays(1);
+
+                FillCount(nudGuestCount, 1, 20, 1);
+                FillCount(nudRoomCount, 1, 10, 1);
+                FillCount(nudAdults, 1, 20, 1);
+                FillCount(nudChildren, 0, 20, 0);
+
+                if (cmbIdType.Items.Count == 0)
+                {
+                    cmbIdType.Items.AddRange(new object[]
+                    {
+                        "National ID",
+                        "Passport",
+                        "Driver's License",
+                        "Student ID",
+                        "Other"
+                    });
+                }
+
+                cmbReservationFeeMethod.Items.Clear();
+
+                cmbReservationFeeMethod.Items.AddRange(
+                    new object[] { "Cash", "GCash", "Card" });
+
+                cmbReservationFeeMethod.DropDownStyle =
+                    ComboBoxStyle.DropDownList;
+
+                List<string> types =
+                    reservationService.GetRoomTypes();
+
+                cmbRoomType.Items.Clear();
+                cmbPreferredRoomType.Items.Clear();
+
+                foreach (string type in types)
+                {
+                    cmbRoomType.Items.Add(type);
+                    cmbPreferredRoomType.Items.Add(type);
+                }
+
+                // Adds a New Guest button without changing the Designer.
+                btnNewGuest = new Button();
+                btnNewGuest.Name = "btnNewGuest";
+                btnNewGuest.Text = "New Guest";
+                btnNewGuest.Left = 301;
+                btnNewGuest.Top = 271;
+                btnNewGuest.Width = 100;
+                btnNewGuest.Height = 37;
+
+                btnNewGuest.Click += (s, args) => NewGuest();
+
+                groupBox4.Controls.Add(btnNewGuest);
+
+                LoadGuests();
+                UpdateSummary();
             }
+            catch (Exception ex)
+            {
+                ShowError(ex);
+            }
+        }
+
+        private void FillCount(
+            ComboBox combo,
+            int min,
+            int max,
+            int start)
+        {
+            combo.Items.Clear();
+
+            for (int n = min; n <= max; n++)
+                combo.Items.Add(n.ToString());
+
+            combo.DropDownStyle = ComboBoxStyle.DropDownList;
+            combo.SelectedItem = start.ToString();
+        }
+
+        private int ReadCount(ComboBox combo, string label)
+        {
+            int result;
+
+            if (!int.TryParse(combo.Text, out result))
+                throw new InvalidOperationException(
+                    "Select " + label + ".");
+
+            return result;
         }
 
         private void LoadGuests()
         {
+            int currentId =
+                selectedGuest == null ? 0 : selectedGuest.GuestId;
+
+            listBoxGuest.BeginUpdate();
+
             try
             {
-                int selectedId = 0;
-
-                if (selectedGuest != null)
-                {
-                    selectedId = selectedGuest.GuestId;
-                }
-
-                var guests = service.SearchGuest(txtUsername.Text.Trim());
-
                 listBoxGuest.Items.Clear();
 
-                foreach (Guest guest in guests)
+                foreach (Guest guest in
+                    reservationService.SearchGuest(
+                        txtSearchGuest.Text.Trim()))
                 {
                     listBoxGuest.Items.Add(guest);
 
-                    if (guest.GuestId == selectedId)
-                    {
+                    if (guest.GuestId == currentId)
                         listBoxGuest.SelectedItem = guest;
-                    }
                 }
             }
-            catch
+            finally
             {
+                listBoxGuest.EndUpdate();
             }
         }
 
-        private void LoadRoomTypes()
+        private void SearchGuest_Click(object sender, EventArgs e)
         {
             try
             {
-                cmbRoomType.Items.Clear();
+                LoadGuests();
 
-                var roomTypes = service.GetRoomTypes();
-
-                foreach (string roomType in roomTypes)
-                {
-                    cmbRoomType.Items.Add(roomType);
-                }
+                if (listBoxGuest.Items.Count == 0)
+                    MessageBox.Show("No guest found.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                ShowError(ex);
             }
         }
 
-        private void txtUsername_TextChanged(object sender, EventArgs e)
+        private void SelectGuest_Click(object sender, EventArgs e)
         {
+            Guest item = listBoxGuest.SelectedItem as Guest;
 
-        }
-
-        private void btnSearch_Click(object sender, EventArgs e)
-        {
-            LoadGuests();
-
-            if (listBoxGuest.Items.Count == 0)
+            if (item == null)
             {
-                MessageBox.Show("No guest found.");
-            }
-        }
-
-        private void btnSelectguest_Click(object sender, EventArgs e)
-        {
-            if (listBoxGuest.SelectedItem == null)
-            {
-                MessageBox.Show("Please select a guest.");
+                MessageBox.Show("Select a guest record first.");
                 return;
             }
 
-            selectedGuest = (Guest)listBoxGuest.SelectedItem;
-
-            lblGuestname.Text = selectedGuest.GuestName;
-        }
-
-        private void txtGuestName_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void txtContactNumber_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
             try
             {
-                selectedGuest = service.CreateGuest(
-                    txtGuestName.Text.Trim(),
-                    txtContactNumber.Text.Trim());
+                selectedGuest = details.GetGuest(item.GuestId);
 
-                lblGuestname.Text = selectedGuest.GuestName;
+                if (selectedGuest == null)
+                {
+                    MessageBox.Show("Guest not found. Search again.");
+                    return;
+                }
 
-                MessageBox.Show("Guest created successfully.");
+                txtGuestName.Text = selectedGuest.GuestName;
+                txtContactNumber.Text =
+                    selectedGuest.ContactNumber;
 
-                txtGuestName.Clear();
-                txtContactNumber.Clear();
+                txtEmail.Text = selectedGuest.Email;
+                txtAddress.Text = selectedGuest.HomeAddress;
+                cmbIdType.Text = selectedGuest.IdType;
 
-                LoadGuests();
+                btnSaveGuest.Text = "Update Guest Record";
+
+                UpdateSummary();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                ShowError(ex);
             }
         }
 
-        private void dateTimePickerCheckIn_ValueChanged(object sender, EventArgs e)
+        private void NewGuest()
         {
-            UpdateStay();
+            selectedGuest = null;
 
-            selectedRoom = null;
-            lblRoomOutput.Text = "Output";
+            listBoxGuest.ClearSelected();
 
-            listBoxAvailability.Items.Clear();
+            txtGuestName.Clear();
+            txtContactNumber.Clear();
+            txtEmail.Clear();
+            txtAddress.Clear();
+
+            cmbIdType.SelectedIndex = -1;
+            cmbIdType.Text = "";
+
+            btnSaveGuest.Text = "+ Save Guest Record";
+
+            UpdateSummary();
+            txtGuestName.Focus();
         }
 
-        private void dateTimePickerCheckOut_ValueChanged(object sender, EventArgs e)
-        {
-            UpdateStay();
-
-            selectedRoom = null;
-            lblRoomOutput.Text = "Output";
-
-            listBoxAvailability.Items.Clear();
-        }
-
-        private void cmbRoomType_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            selectedRoom = null;
-            lblRoomOutput.Text = "Output";
-
-            listBoxAvailability.Items.Clear();
-        }
-
-        private void btnCheckAvailability_Click(object sender, EventArgs e)
-        {
-            LoadAvailableRooms(true);
-        }
-
-        private void LoadAvailableRooms(bool showMessage)
+        private void SaveGuest_Click(object sender, EventArgs e)
         {
             try
             {
-                if (cmbRoomType.SelectedIndex < 0)
+                if (!string.IsNullOrWhiteSpace(txtEmail.Text))
                 {
-                    if (showMessage)
-                    {
-                        MessageBox.Show("Please select a room type.");
-                    }
+                    MailAddress address =
+                        new MailAddress(txtEmail.Text.Trim());
 
-                    return;
+                    if (address.Address != txtEmail.Text.Trim())
+                        throw new InvalidOperationException(
+                            "Enter a valid email address.");
                 }
 
-                if (dateTimePickerCheckOut.Value.Date <=
-                    dateTimePickerCheckIn.Value.Date)
+                Guest guest = new Guest
                 {
-                    if (showMessage)
-                    {
-                        MessageBox.Show(
-                            "Check-out date must be later than check-in date.");
-                    }
+                    GuestId = selectedGuest == null
+                        ? 0
+                        : selectedGuest.GuestId,
 
-                    return;
-                }
+                    GuestName = txtGuestName.Text.Trim(),
 
-                int selectedRoomId = 0;
+                    ContactNumber =
+                        txtContactNumber.Text.Trim(),
 
-                if (selectedRoom != null)
-                {
-                    selectedRoomId = selectedRoom.RoomId;
-                }
+                    Email = txtEmail.Text.Trim(),
 
-                var rooms = service.GetAvailableRooms(
-                    dateTimePickerCheckIn.Value,
-                    dateTimePickerCheckOut.Value,
+                    HomeAddress = txtAddress.Text.Trim(),
+
+                    IdType = cmbIdType.Text.Trim()
+                };
+
+                bool editing = guest.GuestId > 0;
+
+                selectedGuest = details.SaveGuest(guest);
+
+                txtSearchGuest.Clear();
+                LoadGuests();
+
+                btnSaveGuest.Text = "Update Guest Record";
+
+                UpdateSummary();
+
+                MessageBox.Show(editing
+                    ? "Guest updated and saved to SQL."
+                    : "Guest saved to SQL.");
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex);
+            }
+        }
+
+        private bool GuestHasUnsavedChanges()
+        {
+            return selectedGuest != null &&
+                (
+                    txtGuestName.Text.Trim() !=
+                        (selectedGuest.GuestName ?? "") ||
+
+                    txtContactNumber.Text.Trim() !=
+                        (selectedGuest.ContactNumber ?? "") ||
+
+                    txtEmail.Text.Trim() !=
+                        (selectedGuest.Email ?? "") ||
+
+                    txtAddress.Text.Trim() !=
+                        (selectedGuest.HomeAddress ?? "") ||
+
+                    cmbIdType.Text.Trim() !=
+                        (selectedGuest.IdType ?? "")
+                );
+        }
+
+        private void PreferredTypeChanged(
+            object sender,
+            EventArgs e)
+        {
+            if (cmbPreferredRoomType.SelectedIndex >= 0)
+            {
+                cmbRoomType.SelectedItem =
+                    cmbPreferredRoomType.SelectedItem;
+            }
+        }
+
+        private void PreferredRoom_Click(
+            object sender,
+            EventArgs e)
+        {
+            if (cmbPreferredRoomType.SelectedIndex < 0)
+            {
+                MessageBox.Show("Select a room type first.");
+                return;
+            }
+
+            cmbRoomType.SelectedItem =
+                cmbPreferredRoomType.SelectedItem;
+
+            CheckAvailability_Click(sender, e);
+        }
+
+        private void CheckAvailability_Click(
+            object sender,
+            EventArgs e)
+        {
+            try
+            {
+                LoadAvailableRooms();
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex);
+            }
+        }
+
+        private void LoadAvailableRooms()
+        {
+            ClearRoom();
+
+            if (cmbRoomType.SelectedIndex < 0)
+                throw new InvalidOperationException(
+                    "Select a room type.");
+
+            List<AvailableRoomInfo> rooms =
+                details.GetAvailableRooms(
+                    dtpCheckIn.Value.Date,
+                    dtpCheckOut.Value.Date,
                     cmbRoomType.Text);
 
-                listBoxAvailability.Items.Clear();
-
-                bool roomFound = false;
-
-                foreach (Room room in rooms)
-                {
-                    listBoxAvailability.Items.Add(room);
-
-                    if (room.RoomId == selectedRoomId)
-                    {
-                        listBoxAvailability.SelectedItem = room;
-                        selectedRoom = room;
-                        roomFound = true;
-                    }
-                }
-
-                if (selectedRoomId != 0 && roomFound == false)
-                {
-                    selectedRoom = null;
-                    lblRoomOutput.Text = "Output";
-                }
-
-                if (rooms.Count == 0 && showMessage)
-                {
-                    MessageBox.Show("No available rooms found.");
-                }
-            }
-            catch (Exception ex)
+            foreach (AvailableRoomInfo room in rooms)
             {
-                if (showMessage)
-                {
-                    MessageBox.Show(ex.Message);
-                }
+                int index = dgvAvailableRooms.Rows.Add(
+                    room.RoomNumber,
+                    room.RoomType,
+
+                    room.RoomCapacity.HasValue
+                        ? room.RoomCapacity.Value.ToString()
+                        : "Not set",
+
+                    room.ReservationFee.HasValue
+                        ? "PHP " +
+                            room.ReservationFee.Value.ToString("N2")
+                        : "Not set",
+
+                    room.RoomRate.ToString("N2"),
+
+                    "Available"
+                );
+
+                dgvAvailableRooms.Rows[index].Tag = room;
             }
+
+            if (rooms.Count == 0)
+                MessageBox.Show(
+                    "No rooms available for those dates.");
         }
 
-        private void listBoxAvailability_SelectedIndexChanged(
-            object sender,
-            EventArgs e)
+        private void SelectRoom_Click(object sender, EventArgs e)
         {
-            if (listBoxAvailability.SelectedItem == null)
+            SelectRoom();
+        }
+
+        private void SelectRoom()
+        {
+            if (dgvAvailableRooms.SelectedRows.Count == 0 ||
+                !(dgvAvailableRooms.SelectedRows[0].Tag
+                    is AvailableRoomInfo))
             {
+                MessageBox.Show(
+                    "Select a room from the available rooms table.");
                 return;
             }
 
-            selectedRoom = (Room)listBoxAvailability.SelectedItem;
+            selectedRoom =
+                (AvailableRoomInfo)
+                    dgvAvailableRooms.SelectedRows[0].Tag;
 
-            lblRoomOutput.Text = selectedRoom.RoomNumber;
-
-            UpdateStay();
+            UpdateSummary();
         }
 
-        private void UpdateStay()
+        private void ClearRoom()
         {
-            TimeSpan stay =
-                dateTimePickerCheckOut.Value.Date -
-                dateTimePickerCheckIn.Value.Date;
+            selectedRoom = null;
+            dgvAvailableRooms.Rows.Clear();
 
-            if (stay.Days > 0)
-            {
-                lblStayDate.Text = stay.Days + " night(s)";
-            }
-            else
-            {
-                lblStayDate.Text = "Output";
-            }
+            UpdateSummary();
         }
 
-        private void cmbReservationStatus_SelectedIndexChanged(
+        private void UpdateSummary()
+        {
+            lblSummaryGuest.Text =
+                !string.IsNullOrWhiteSpace(txtGuestName.Text)
+                ? txtGuestName.Text.Trim()
+                : "Output";
+
+            int nights =
+                (dtpCheckOut.Value.Date -
+                 dtpCheckIn.Value.Date).Days;
+
+            lblSummaryStay.Text = nights > 0
+                ? nights + " night(s)"
+                : "Output";
+
+            lblSummaryRoom.Text = selectedRoom == null
+                ? "Output"
+                : selectedRoom.RoomNumber;
+
+            lblSummaryRate.Text = selectedRoom == null
+                ? "Output"
+                : "PHP " +
+                    selectedRoom.RoomRate.ToString("N2") +
+                    "/night";
+
+            lblSummaryReservationFee.Text =
+                selectedRoom == null
+                ? "Output"
+                : selectedRoom.ReservationFee.HasValue
+                    ? "PHP " +
+                        selectedRoom.ReservationFee.Value
+                            .ToString("N2")
+                    : "Not configured";
+
+            lblReservationFeePreview.Text =
+                selectedRoom == null
+                ? "Output"
+                : selectedRoom.ReservationFee.HasValue
+                    ? "PHP " +
+                        selectedRoom.ReservationFee.Value
+                            .ToString("N2")
+                    : "Not configured";
+        }
+
+        private void CreateReservation_Click(
             object sender,
             EventArgs e)
-        {
-
-        }
-
-        private void btnCreateReservation_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                int reservationId = service.CreateReservation(
-                    selectedGuest,
-                    selectedRoom,
-                    dateTimePickerCheckIn.Value,
-                    dateTimePickerCheckOut.Value,
-                    cmbReservationStatus.Text);
-
-                MessageBox.Show(
-                    "Reservation created successfully!\n" +
-                    "Reservation ID: " + reservationId);
-
-                RefreshDashboard();
-
-                ClearReservation();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
-
-        private void btnCancel_Click(object sender, EventArgs e)
         {
             try
             {
                 if (selectedGuest == null)
-                {
-                    MessageBox.Show("Please select a guest first.");
-                    return;
-                }
+                    throw new InvalidOperationException(
+                        "Save or select the guest first.");
 
-                DialogResult answer = MessageBox.Show(
-                    "Cancel the reservation of " + selectedGuest.GuestName + "?",
-                    "Cancel Reservation",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
+                if (GuestHasUnsavedChanges())
+                    throw new InvalidOperationException(
+                        "Guest details changed. Click Update " +
+                        "Guest Record before reserving.");
 
-                if (answer == DialogResult.Yes)
-                {
-                    bool cancelled = service.CancelReservation(selectedGuest);
+                if (selectedRoom == null)
+                    throw new InvalidOperationException(
+                        "Select an available room first.");
 
-                    if (cancelled)
-                    {
-                        MessageBox.Show("Reservation cancelled successfully.");
+                int totalGuests =
+                    ReadCount(nudGuestCount, "Number of Guests");
 
-                        RefreshDashboard();
+                int adults =
+                    ReadCount(nudAdults, "Adults");
 
-                        LoadGuests();
+                int children =
+                    ReadCount(nudChildren, "Children");
 
-                        if (cmbRoomType.SelectedIndex >= 0)
-                        {
-                            LoadAvailableRooms(false);
-                        }
+                int rooms =
+                    ReadCount(nudRoomCount, "Rooms");
 
-                        ClearReservation();
-                    }
-                    else
-                    {
-                        MessageBox.Show(
-                            "This guest has no Pending or Confirmed reservation.");
-                    }
-                }
+                if (totalGuests != adults + children)
+                    throw new InvalidOperationException(
+                        "Number of Guests must equal " +
+                        "Adults + Children.");
+
+                if (rooms != 1)
+                    throw new InvalidOperationException(
+                        "The current system supports one room " +
+                        "per reservation. Select Rooms = 1.");
+
+                if (selectedRoom.RoomCapacity.HasValue &&
+                    totalGuests > selectedRoom.RoomCapacity.Value)
+                    throw new InvalidOperationException(
+                        "Guest count exceeds the selected room capacity.");
+
+                string method = cmbReservationFeeMethod.Text;
+
+                if (selectedRoom.ReservationFee
+                        .GetValueOrDefault() > 0 &&
+                    string.IsNullOrWhiteSpace(method))
+                    throw new InvalidOperationException(
+                        "Choose a reservation fee payment method.");
+
+                int id = details.CreateReservation(
+                    selectedGuest.GuestId,
+                    selectedRoom,
+                    dtpCheckIn.Value,
+                    dtpCheckOut.Value,
+                    totalGuests,
+                    adults,
+                    children,
+                    rooms,
+                    txtSpecialRequest.Text.Trim(),
+                    method);
+
+                MessageBox.Show(
+                    "Reservation #" + id +
+                    " saved to SQL as Pending.\n\n" +
+                    "The reservation fee method was recorded, " +
+                    "but no actual payment was processed.");
+
+                selectedRoom = null;
+                dgvAvailableRooms.Rows.Clear();
+
+                UpdateSummary();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                ShowError(ex);
             }
         }
-        private void RefreshDashboard()
+
+        private void CancelReservation_Click(
+            object sender,
+            EventArgs e)
         {
-            foreach (Form form in Application.OpenForms)
+            if (selectedGuest == null)
             {
-                if (form is FrontDeskDashboard)
-                {
-                    FrontDeskDashboard dashboard =
-                        (FrontDeskDashboard)form;
-
-                    dashboard.RefreshDashboardData();
-                }
+                MessageBox.Show("Select a guest first.");
+                return;
             }
-        }
-        private void ClearReservation()
-        {
-            selectedGuest = null;
-            selectedRoom = null;
 
-            lblGuestname.Text = "Output";
-            lblStayDate.Text = "Output";
-            lblRoomOutput.Text = "Output";
+            DialogResult answer = MessageBox.Show(
+                "Cancel the latest Pending/Confirmed reservation for " +
+                    selectedGuest.GuestName + "?",
+                "Cancel Reservation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
 
-            listBoxGuest.ClearSelected();
-            listBoxAvailability.Items.Clear();
+            if (answer != DialogResult.Yes)
+                return;
 
-            cmbRoomType.SelectedIndex = -1;
-
-            if (cmbReservationStatus.Items.Count > 0)
+            try
             {
-                cmbReservationStatus.SelectedIndex = 0;
+                bool cancelled =
+                    reservationService.CancelReservation(
+                        selectedGuest);
+
+                MessageBox.Show(cancelled
+                    ? "Latest reservation cancelled in SQL."
+                    : "No active reservation found.");
             }
-
-            dateTimePickerCheckIn.Value = DateTime.Today;
-            dateTimePickerCheckOut.Value = DateTime.Today.AddDays(1);
-
-            LoadGuests();
+            catch (Exception ex)
+            {
+                ShowError(ex);
+            }
         }
 
-        private void btnBackReservation_Click(object sender, EventArgs e)
+        private void ShowError(Exception ex)
         {
-            refreshTimer.Stop();
-
-            FrontDeskDashboard ui = new FrontDeskDashboard();
-
-            ui.Show();
-            this.Close();
-        }
-
-        private void FrontDesk_ReservationUI_Load_1(object sender, EventArgs e)
-        {
-
+            MessageBox.Show(
+                ex.Message,
+                "Reservation Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
     }
 }
