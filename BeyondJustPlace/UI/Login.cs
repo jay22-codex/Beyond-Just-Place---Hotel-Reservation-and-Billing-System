@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Windows.Forms;
 using BusinessLogic.Repository;
 
@@ -9,52 +10,84 @@ namespace UI
         public Login()
         {
             InitializeComponent();
+
+            txtPassword.UseSystemPasswordChar = true;
+
+            btnLogin.Click -= btnLogin_Click;
+            btnLogin.Click += btnLogin_Click;
         }
 
         private void btnLogin_Click(object sender, EventArgs e)
         {
-            if (!cbAdmin.Checked && !cbFrontDesk.Checked)
+            string username = txtUsername.Text.Trim();
+            string password = txtPassword.Text;
+
+            if (username == "" || password == "")
             {
-                MessageBox.Show("Please select Admin or Front Desk.");
+                MessageBox.Show(
+                    "Please enter your username and password.");
                 return;
             }
 
-            UserRepository user = new UserRepository();
+            try
+            {
+                btnLogin.Enabled = false;
 
-            string role = user.Login(txtUsername.Text, txtPassword.Text);
+                UserRepository repository = new UserRepository();
+                string role = repository.Login(username, password);
 
-            if (role == "Admin" && cbAdmin.Checked)
-            {
-                AdminDashboard admin = new AdminDashboard();
-                admin.Show();
-                this.Hide();
+                role = (role ?? "")
+                    .Replace(" ", "")
+                    .Trim();
+
+                Form dashboard;
+
+                if (role.Equals("Admin",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    dashboard = new AdminDashboard();
+                }
+                else if (role.Equals("FrontDesk",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    dashboard = new FrontDeskDashboard();
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "Invalid username or password.");
+                    return;
+                }
+
+                dashboard.FormClosed += Dashboard_FormClosed;
+
+                dashboard.Show();
+                Hide();
             }
-            else if (role == "FrontDesk" && cbFrontDesk.Checked)
+            catch (Exception ex)
             {
-                FrontDeskDashboard frontDesk = new FrontDeskDashboard();
-                frontDesk.Show();
-                this.Hide();
+                MessageBox.Show(
+                    "Unable to log in:\n" + ex.Message,
+                    "Login Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
-            else
+            finally
             {
-                MessageBox.Show("Invalid username, password, or role.");
+                btnLogin.Enabled = true;
             }
         }
 
-        private void cbAdmin_CheckedChanged(object sender, EventArgs e)
+        private void Dashboard_FormClosed(
+            object sender,
+            FormClosedEventArgs e)
         {
-            if (cbAdmin.Checked)
-            {
-                cbFrontDesk.Checked = false;
-            }
-        }
+            txtUsername.Clear();
+            txtPassword.Clear();
 
-        private void cbFrontDesk_CheckedChanged(object sender, EventArgs e)
-        {
-            if (cbFrontDesk.Checked)
-            {
-                cbAdmin.Checked = false;
-            }
+            Show();
+            Activate();
+            txtUsername.Focus();
         }
     }
 }

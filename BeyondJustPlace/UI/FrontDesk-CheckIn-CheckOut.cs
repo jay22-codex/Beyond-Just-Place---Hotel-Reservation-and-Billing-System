@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Data;
 using System.Windows.Forms;
 using BusinessLogic;
@@ -8,11 +9,8 @@ namespace UI
 {
     public partial class FrontDesk_CheckIn_CheckOut : Form
     {
-        private ReservationService reservationService =
-            new ReservationService();
-
-        private BillingService billingService =
-            new BillingService();
+        private readonly FrontDeskOperationsService operations =
+            new FrontDeskOperationsService();
 
         private BillingInfo selectedBilling;
 
@@ -20,167 +18,136 @@ namespace UI
         {
             InitializeComponent();
 
-            dataGridViewReservation.ReadOnly = true;
-            dataGridViewReservation.AllowUserToAddRows = false;
-            dataGridViewReservation.AllowUserToDeleteRows = false;
-            dataGridViewReservation.MultiSelect = false;
-
-            dataGridViewReservation.SelectionMode =
-                DataGridViewSelectionMode.FullRowSelect;
-
-            lblConfirm.Click -= lblConfirm_Click;
-            lblConfirm.Click += lblConfirm_Click;
-
-            btnSearch1.Click -= btnSearch1_Click;
-            btnSearch1.Click += btnSearch1_Click;
-
-            btnCheckOut.Click -= btnCheckOut_Click;
+            btnSearchCheckIn.Click += btnSearch_Click;
+            button1.Click += btnConfirmCheckIn_Click;
+            button3.Click += btnSearchCheckout_Click;
             btnCheckOut.Click += btnCheckOut_Click;
 
-            btnBackReservation.Click -=
-                btnBackReservation_Click;
+            dgvCheckInReservations.AllowUserToAddRows = false;
+            dgvCheckInReservations.ReadOnly = true;
+            dgvCheckInReservations.MultiSelect = false;
 
-            btnBackReservation.Click +=
-                btnBackReservation_Click;
+            dgvCheckInReservations.SelectionMode =
+                DataGridViewSelectionMode.FullRowSelect;
+
+            dgvCheckInReservations.AutoSizeColumnsMode =
+                DataGridViewAutoSizeColumnsMode.Fill;
+
+            ClearBill();
         }
 
-        private void SearchCheckIn()
-        {
-           
-        }
+        // =========================================
+        // CHECK-IN: SEARCH EXISTING RESERVATIONS
+        // =========================================
 
-        private void lblConfirm_Click(
-            object sender,
-            EventArgs e)
+        private void btnSearch_Click(object sender, EventArgs e)
         {
             try
             {
-                if (dataGridViewReservation
-                    .SelectedRows.Count == 0)
-                {
-                    MessageBox.Show(
-                        "Please select a reservation.");
+                dgvCheckInReservations.Rows.Clear();
 
-                    return;
+                DataTable matches =
+                    operations.SearchCheckIn(
+                        txtCheckInGuest.Text.Trim());
+
+                foreach (DataRow item in matches.Rows)
+                {
+                    int index = dgvCheckInReservations.Rows.Add(
+                        Convert.ToString(item["GuestName"]),
+                        Convert.ToString(item["RoomNumber"]),
+                        Convert.ToDateTime(item["CheckInDate"])
+                            .ToString("yyyy-MM-dd"),
+                        Convert.ToString(item["ReservationStatus"])
+                    );
+
+                    dgvCheckInReservations.Rows[index].Tag =
+                        Convert.ToInt32(item["ReservationId"]);
                 }
 
-                DataGridViewRow row =
-                    dataGridViewReservation
-                    .SelectedRows[0];
+                dgvCheckInReservations.ClearSelection();
 
-                int reservationId =
-                    Convert.ToInt32(row.Tag);
-
-                reservationService.CheckInGuest(
-                    reservationId);
-
-                MessageBox.Show(
-                    "Guest checked in successfully.");
-
-                SearchCheckIn();
-
-                RefreshDashboard();
+                if (matches.Rows.Count == 0)
+                {
+                    MessageBox.Show(
+                        "No Pending or Confirmed reservation found.");
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    ex.Message);
+                ShowError(ex);
             }
         }
 
+        // =========================================
+        // CHECK-IN: CONFIRM SELECTED RESERVATION
+        // =========================================
 
-        private void btnCheckOut_Click(
-            object sender,
-            EventArgs e)
+        private void btnConfirmCheckIn_Click(
+            object sender, EventArgs e)
         {
-            if (selectedBilling == null)
+            if (dgvCheckInReservations.SelectedRows.Count == 0 ||
+                dgvCheckInReservations.SelectedRows[0].Tag == null)
             {
                 MessageBox.Show(
-                    "Please search a checked-in guest first.");
-
+                    "Select a reservation from the results first.");
                 return;
             }
 
-            FrontDesk_Billing_PaymentUI billingUI =
-                new FrontDesk_Billing_PaymentUI(
-                    selectedBilling);
+            int id = Convert.ToInt32(
+                dgvCheckInReservations.SelectedRows[0].Tag);
 
-            billingUI.ShowDialog();
+            DialogResult answer = MessageBox.Show(
+                "Check in reservation #" + id + "?",
+                "Confirm Check-In",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
 
-            if (billingUI.PaymentCompleted)
+            if (answer != DialogResult.Yes)
+                return;
+
+            try
             {
-                ClearCheckOut();
+                bool updated = operations.CheckIn(id);
 
-                RefreshDashboard();
+                MessageBox.Show(updated
+                    ? "Guest checked in successfully."
+                    : "Reservation is no longer Pending or Confirmed. Search again.");
+
+                btnSearch_Click(sender, e);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex);
             }
         }
 
-        private void ClearCheckOut()
+        // =========================================
+        // CHECK-OUT: SEARCH CHECKED-IN GUEST
+        // =========================================
+
+        private void btnSearchCheckout_Click(
+            object sender, EventArgs e)
         {
             selectedBilling = null;
+            ClearBill();
 
-            txtGuestName1.Clear();
-
-            lblGuestnameOutput.Text =
-                "Guest name Output";
-
-            lblRoomOutput.Text =
-                "Room Output";
-
-            lblStayOutput.Text =
-                "Stay Output";
-
-            lblRoomCharges.Text =
-                "0.00";
-
-            lblOtherCharges.Text =
-                "0.00";
-
-            lblTotalBill.Text =
-                "0.00";
-        }
-
-        private void RefreshDashboard()
-        {
-            foreach (Form form in Application.OpenForms)
+            if (string.IsNullOrWhiteSpace(textBox1.Text))
             {
-                if (form is FrontDeskDashboard)
-                {
-                    FrontDeskDashboard dashboard =
-                        (FrontDeskDashboard)form;
-
-                    dashboard.RefreshDashboardData();
-                }
+                MessageBox.Show(
+                    "Enter the guest's name in the Check-Out section.");
+                return;
             }
-        }
 
-        private void btnBackReservation_Click(
-            object sender,
-            EventArgs e)
-        {
-            FrontDeskDashboard dashboard =
-                new FrontDeskDashboard();
-
-            dashboard.Show();
-
-            this.Close();
-        }
-
-        private void btnSearch1_Click(object sender, EventArgs e)
-        {
             try
             {
                 selectedBilling =
-                    billingService.SearchGuest(
-                        txtGuestName1.Text.Trim());
+                    operations.GetCheckedInBilling(
+                        textBox1.Text.Trim());
 
                 if (selectedBilling == null)
                 {
                     MessageBox.Show(
-                        "Checked-in guest not found.");
-
-                    ClearCheckOut();
-
+                        "No checked-in reservation found.");
                     return;
                 }
 
@@ -191,71 +158,106 @@ namespace UI
                     selectedBilling.RoomNumber;
 
                 lblStayOutput.Text =
-                    selectedBilling.StayDays +
-                    " night(s)";
+                    selectedBilling.StayDays + " night(s)";
 
                 lblRoomCharges.Text =
-                    "₱" +
-                    selectedBilling.RoomCharges
-                    .ToString("N2");
+                    "PHP " +
+                    selectedBilling.RoomCharges.ToString("N2");
 
                 lblOtherCharges.Text =
-                    "₱" +
-                    selectedBilling.OtherCharges
-                    .ToString("N2");
+                    "PHP " +
+                    selectedBilling.OtherCharges.ToString("N2");
 
                 lblTotalBill.Text =
-                    "₱" +
-                    selectedBilling.TotalBill
-                    .ToString("N2");
+                    "PHP " +
+                    selectedBilling.TotalBill.ToString("N2");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    ex.Message);
+                ShowError(ex);
             }
         }
 
-        private void btnSearch_Click(object sender, EventArgs e)
+        // =========================================
+        // CHECK-OUT: OPEN BILLING AND PAYMENT
+        // =========================================
+
+        private void btnCheckOut_Click(
+            object sender, EventArgs e)
         {
+            if (selectedBilling == null)
+            {
+                MessageBox.Show(
+                    "Search a checked-in guest in the Check-Out section first.");
+                return;
+            }
+
             try
             {
-                DataTable reservations =
-                    reservationService.SearchCheckInReservations(
-                        txtGuestName.Text.Trim());
+                FrontDeskDashboard parent =
+                    MdiParent as FrontDeskDashboard;
 
-                dataGridViewReservation.Rows.Clear();
-
-                foreach (DataRow row in reservations.Rows)
+                if (parent != null)
                 {
-                    int index =
-                        dataGridViewReservation.Rows.Add(
-                            row["GuestName"].ToString(),
-                            row["RoomNumber"].ToString(),
-                            Convert.ToDateTime(
-                                row["CheckInDate"])
-                                .ToShortDateString(),
-                            row["ReservationStatus"].ToString());
-
-                    dataGridViewReservation
-                        .Rows[index].Tag =
-                        Convert.ToInt32(
-                            row["ReservationId"]);
+                    parent.OpenBilling(selectedBilling);
                 }
-
-                dataGridViewReservation.ClearSelection();
-
-                if (reservations.Rows.Count == 0)
+                else
                 {
-                    MessageBox.Show(
-                        "No reservation found.");
+                    using (FrontDesk_Billing_PaymentUI form =
+                        new FrontDesk_Billing_PaymentUI(
+                            selectedBilling))
+                    {
+                        form.ShowDialog(this);
+
+                        if (form.PaymentCompleted)
+                        {
+                            textBox1.Clear();
+                            selectedBilling = null;
+                            ClearBill();
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    ex.Message);
+                ShowError(ex);
             }
+        }
+
+        // =========================================
+        // CLEAR DISPLAYED CHECK-OUT DETAILS
+        // =========================================
+
+        private void ClearBill()
+        {
+            lblGuestnameOutput.Text = "Output";
+            lblRoomOutput.Text = "Output";
+            lblStayOutput.Text = "Output";
+
+            lblRoomCharges.Text = "PHP 0.00";
+            lblOtherCharges.Text = "PHP 0.00";
+            lblTotalBill.Text = "PHP 0.00";
+        }
+
+        private void btnBackReservation_Click(
+            object sender, EventArgs e)
+        {
+            FrontDeskDashboard parent =
+                MdiParent as FrontDeskDashboard;
+
+            if (parent != null)
+                parent.ShowDashboard();
+            else
+                Close();
+        }
+
+        private void ShowError(Exception ex)
+        {
+            MessageBox.Show(
+                ex.Message,
+                "Check-In / Check-Out Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
     }
 }

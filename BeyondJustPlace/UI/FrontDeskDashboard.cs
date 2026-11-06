@@ -1,156 +1,283 @@
-﻿using System;
+﻿
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
-using BusinessLogic;
+using Model;
 
 namespace UI
 {
     public partial class FrontDeskDashboard : Form
     {
-        private ReservationService service = new ReservationService();
-        private Timer refreshTimer = new Timer();
+        private bool homeOpened = false;
 
-        public void RefreshDashboardData()
-        {
-            LoadDashboard(false);
-        }
         public FrontDeskDashboard()
         {
             InitializeComponent();
 
-            refreshTimer.Interval = 5000;
-            refreshTimer.Tick += RefreshTimer_Tick;
+            IsMdiContainer = true;
+            WindowState = FormWindowState.Maximized;
+
+            ConnectNavigation();
         }
 
-        private void FrontDeskDashboard_Load(object sender, EventArgs e)
+        private void ConnectNavigation()
         {
-            LoadDashboard(true);
-            refreshTimer.Start();
+            ConnectButton(
+                new string[] { "btnDashboard" },
+                "Dashboard",
+                btnDashboard_Click);
+
+            ConnectButton(
+                new string[] { "btnReservation" },
+                "Reservation",
+                btnReservation_Click);
+
+            ConnectButton(
+                new string[] {
+                    "btnCheckInCheckOut",
+                    "btnCheckInOut"
+                },
+                "Check-In/Check-Out",
+                btnCheckInOut_Click);
+
+            ConnectButton(
+                new string[] { "btnBilling" },
+                "Billing",
+                btnBilling_Click);
+
+            ConnectButton(
+                new string[] {
+                    "btnLogout",
+                    "btnLogin"
+                },
+                "Logout",
+                btnLogout_Click);
         }
 
-        private void RefreshTimer_Tick(object sender, EventArgs e)
+        private void ConnectButton(
+            string[] possibleNames,
+            string buttonText,
+            EventHandler handler)
         {
-            LoadDashboard(false);
-        }
+            Button button = null;
 
-        private void LoadDashboard(bool showError)
-        {
-            try
+            foreach (string name in possibleNames)
             {
-                int todayReservation =
-                    service.GetTodayReservationCount();
+                Control[] results = Controls.Find(name, true);
 
-                int currentCheckIn =
-                    service.GetCurrentCheckedInCount();
+                button = results.OfType<Button>().FirstOrDefault();
 
-                int expectedCheckIn =
-                    service.GetExpectedCheckInsTodayCount();
-
-                int pendingReservation =
-                    service.GetPendingReservationCount();
-
-                SetNumber(this, "TodayReservation", todayReservation);
-
-                SetNumber(this, "CurrentCheck-inGuest", currentCheckIn);
-
-                SetNumber(this, "ExpectedCheck-insToday", expectedCheckIn);
-
-                SetNumber(this, "PendingReservation", pendingReservation);
-
-                listBox1.Items.Clear();
-
-                var activities =
-                    service.GetLatestActivity();
-
-                foreach (string activity in activities)
-                {
-                    listBox1.Items.Add(activity);
-                }
+                if (button != null)
+                    break;
             }
-            catch (Exception ex)
+
+            if (button == null)
             {
-                if (showError)
-                {
-                    MessageBox.Show(ex.Message);
-                }
+                button = FindButtons(this)
+                    .FirstOrDefault(b =>
+                        Normalize(b.Text) ==
+                        Normalize(buttonText));
+            }
+
+            if (button != null)
+            {
+                // Prevent duplicate Check-In event handlers.
+                button.Click -= btnCheckinCheckout_Click;
+
+                // Prevent duplicate events from the Designer.
+                button.Click -= handler;
+                button.Click += handler;
             }
         }
 
-        private void SetNumber(Control parent, string title, int value)
+        private IEnumerable<Button> FindButtons(Control parent)
         {
             foreach (Control control in parent.Controls)
             {
-                GroupBox groupBox = control as GroupBox;
+                Button button = control as Button;
 
-                if (groupBox != null)
-                {
-                    string groupText =
-                        groupBox.Text.Replace("\r", "")
-                                     .Replace("\n", "")
-                                     .Replace(" ", "")
-                                     .ToLower();
+                if (button != null)
+                    yield return button;
 
-                    string searchText =
-                        title.Replace(" ", "")
-                             .ToLower();
-
-                    if (groupText.Contains(searchText))
-                    {
-                        foreach (Control item in groupBox.Controls)
-                        {
-                            Label label = item as Label;
-
-                            if (label != null)
-                            {
-                                int oldNumber;
-
-                                if (int.TryParse(label.Text, out oldNumber))
-                                {
-                                    label.Text = value.ToString();
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (control.HasChildren)
-                {
-                    SetNumber(control, title, value);
-                }
+                foreach (Button child in FindButtons(control))
+                    yield return child;
             }
         }
 
-        private void btnLogout_Click(object sender, EventArgs e)
+        private string Normalize(string value)
         {
-            refreshTimer.Stop();
-
-            Login login = new Login();
-            login.Show();
-
-            this.Close();
+            return new string(
+                (value ?? "")
+                .Where(char.IsLetterOrDigit)
+                .Select(char.ToLowerInvariant)
+                .ToArray());
         }
 
-        private void btnReservation_Click(object sender, EventArgs e)
+        private void FrontDeskDashboard_Load(
+            object sender,
+            EventArgs e)
         {
-            FrontDesk_ReservationUI reservationUI =
-                new FrontDesk_ReservationUI();
-
-            reservationUI.Show();
+            ShowHomeOnce();
         }
 
-        private void btnBilling_Click(object sender, EventArgs e)
+        protected override void OnShown(EventArgs e)
         {
-            FrontDesk_Billing_PaymentUI payment =
-                new FrontDesk_Billing_PaymentUI();
-            payment.Show();
+            base.OnShown(e);
+            ShowHomeOnce();
         }
 
-        private void btnCheckinCheckout_Click(object sender, EventArgs e)
+        private void ShowHomeOnce()
         {
-            FrontDesk_CheckIn_CheckOut checkIn_CheckOut =
-                new FrontDesk_CheckIn_CheckOut();
+            if (homeOpened)
+                return;
 
-            checkIn_CheckOut.Show();
+            homeOpened = true;
+            ShowDashboard();
+        }
+
+        // =====================================
+        // OPEN MDI CHILD FORM
+        // =====================================
+
+        private void OpenChildForm(Form child)
+        {
+            foreach (Form existing in MdiChildren)
+            {
+                existing.Close();
+
+                if (!existing.IsDisposed)
+                {
+                    child.Dispose();
+                    return;
+                }
+            }
+
+            child.MdiParent = this;
+            child.FormBorderStyle = FormBorderStyle.None;
+
+            child.Show();
+            child.WindowState = FormWindowState.Maximized;
+
+            Control[] panels =
+                Controls.Find("panelSidebar", true);
+
+            if (panels.Length > 0)
+                panels[0].BringToFront();
+        }
+
+        // =====================================
+        // DASHBOARD
+        // =====================================
+
+        public void ShowDashboard()
+        {
+            FrontDeskHome home =
+                ActiveMdiChild as FrontDeskHome;
+
+            if (home != null)
+            {
+                home.RefreshDashboardData();
+                return;
+            }
+
+            OpenChildForm(new FrontDeskHome());
+        }
+
+        public void RefreshDashboardData()
+        {
+            foreach (Form form in MdiChildren)
+            {
+                FrontDeskHome home = form as FrontDeskHome;
+
+                if (home != null)
+                    home.RefreshDashboardData();
+            }
+        }
+
+        // =====================================
+        // BILLING WITH SELECTED GUEST
+        // =====================================
+
+        public void OpenBilling(BillingInfo billing)
+        {
+            if (billing == null)
+            {
+                MessageBox.Show(
+                    "Please select a checked-in guest first.");
+                return;
+            }
+
+            OpenChildForm(
+                new FrontDesk_Billing_PaymentUI(billing));
+        }
+
+        // =====================================
+        // SIDEBAR BUTTONS
+        // =====================================
+
+        private void btnDashboard_Click(
+            object sender,
+            EventArgs e)
+        {
+            ShowDashboard();
+        }
+
+        private void btnReservation_Click(
+            object sender,
+            EventArgs e)
+        {
+            OpenChildForm(
+                new FrontDesk_ReservationUI());
+        }
+
+        private void btnCheckInOut_Click(
+            object sender,
+            EventArgs e)
+        {
+            OpenChildForm(
+                new FrontDesk_CheckIn_CheckOut());
+        }
+
+        // Compatibility with older Designer event names.
+        private void btnCheckinCheckout_Click(
+            object sender,
+            EventArgs e)
+        {
+            btnCheckInOut_Click(sender, e);
+        }
+
+        // Only one btnBilling_Click method is defined.
+        private void btnBilling_Click(
+            object sender,
+            EventArgs e)
+        {
+            MessageBox.Show(
+                "To process Billing, search for a checked-in " +
+                "guest in Check-Out first.");
+
+            OpenChildForm(
+                new FrontDesk_CheckIn_CheckOut());
+        }
+
+        // =====================================
+        // LOGOUT
+        // =====================================
+
+        private void btnLogout_Click(
+            object sender,
+            EventArgs e)
+        {
+            DialogResult result = MessageBox.Show(
+                "Are you sure you want to log out?",
+                "Logout",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                Close();
+            }
         }
     }
 }
