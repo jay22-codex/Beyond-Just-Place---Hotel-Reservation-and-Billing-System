@@ -82,6 +82,10 @@ namespace UI
 
             if (button != null)
             {
+                // Prevent duplicate Check-In event handlers.
+                button.Click -= btnCheckinCheckout_Click;
+
+                // Prevent duplicate events from the Designer.
                 button.Click -= handler;
                 button.Click += handler;
             }
@@ -132,6 +136,10 @@ namespace UI
             ShowDashboard();
         }
 
+        // =====================================
+        // OPEN MDI CHILD FORM
+        // =====================================
+
         private void OpenChildForm(Form child)
         {
             foreach (Form existing in MdiChildren)
@@ -158,6 +166,10 @@ namespace UI
                 panels[0].BringToFront();
         }
 
+        // =====================================
+        // DASHBOARD
+        // =====================================
+
         public void ShowDashboard()
         {
             FrontDeskHome home =
@@ -183,6 +195,10 @@ namespace UI
             }
         }
 
+        // =====================================
+        // BILLING WITH SELECTED GUEST
+        // =====================================
+
         public void OpenBilling(BillingInfo billing)
         {
             if (billing == null)
@@ -195,6 +211,10 @@ namespace UI
             OpenChildForm(
                 new FrontDesk_Billing_PaymentUI(billing));
         }
+
+        // =====================================
+        // SIDEBAR BUTTONS
+        // =====================================
 
         private void btnDashboard_Click(
             object sender,
@@ -219,6 +239,15 @@ namespace UI
                 new FrontDesk_CheckIn_CheckOut());
         }
 
+        // Compatibility with older Designer event names.
+        private void btnCheckinCheckout_Click(
+            object sender,
+            EventArgs e)
+        {
+            btnCheckInOut_Click(sender, e);
+        }
+
+        // Only one btnBilling_Click method is defined.
         private void btnBilling_Click(
             object sender,
             EventArgs e)
@@ -230,6 +259,10 @@ namespace UI
             OpenChildForm(
                 new FrontDesk_CheckIn_CheckOut());
         }
+
+        // =====================================
+        // LOGOUT
+        // =====================================
 
         private void btnLogout_Click(
             object sender,
@@ -245,21 +278,6 @@ namespace UI
             {
                 Close();
             }
-        }
-
-        private void btnBilling_Click(object sender, EventArgs e)
-        {
-            FrontDesk_Billing_PaymentUI payment =
-                new FrontDesk_Billing_PaymentUI();
-            payment.Show();
-        }
-
-        private void btnCheckinCheckout_Click(object sender, EventArgs e)
-        {
-            FrontDesk_CheckIn_CheckOut checkIn_CheckOut =
-                new FrontDesk_CheckIn_CheckOut();
-
-            checkIn_CheckOut.Show();
         }
     }
 }
