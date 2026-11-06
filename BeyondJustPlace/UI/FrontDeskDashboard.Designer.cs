@@ -46,16 +46,17 @@ namespace UI
             this.panelSidebar.Dock = System.Windows.Forms.DockStyle.Left;
             this.panelSidebar.Location = new System.Drawing.Point(0, 0);
             this.panelSidebar.Name = "panelSidebar";
-            this.panelSidebar.Size = new System.Drawing.Size(205, 836);
+            this.panelSidebar.Size = new System.Drawing.Size(234, 1040);
             this.panelSidebar.TabIndex = 1;
             // 
             // btnLogout
             // 
             this.btnLogout.BackColor = System.Drawing.Color.Silver;
             this.btnLogout.Font = new System.Drawing.Font("Arial", 11F, System.Drawing.FontStyle.Bold);
-            this.btnLogout.Location = new System.Drawing.Point(12, 784);
+            this.btnLogout.Location = new System.Drawing.Point(15, 973);
             this.btnLogout.Name = "btnLogout";
-            this.btnLogout.Size = new System.Drawing.Size(180, 40);
+            this.btnLogout.Size = new System.Drawing.Size(204, 45);
+            this.btnLogout.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
             this.btnLogout.TabIndex = 6;
             this.btnLogout.Text = "Logout";
             this.btnLogout.UseVisualStyleBackColor = false;
@@ -63,18 +64,18 @@ namespace UI
             // lblRole
             // 
             this.lblRole.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold);
-            this.lblRole.Location = new System.Drawing.Point(12, 12);
+            this.lblRole.Location = new System.Drawing.Point(17, 28);
             this.lblRole.Name = "lblRole";
-            this.lblRole.Size = new System.Drawing.Size(185, 25);
+            this.lblRole.Size = new System.Drawing.Size(205, 30);
             this.lblRole.TabIndex = 0;
             this.lblRole.Text = "ROLE: FRONT DESK";
             // 
             // btnDashboard
             // 
             this.btnDashboard.Font = new System.Drawing.Font("Arial", 11F, System.Drawing.FontStyle.Bold);
-            this.btnDashboard.Location = new System.Drawing.Point(12, 60);
+            this.btnDashboard.Location = new System.Drawing.Point(15, 86);
             this.btnDashboard.Name = "btnDashboard";
-            this.btnDashboard.Size = new System.Drawing.Size(180, 40);
+            this.btnDashboard.Size = new System.Drawing.Size(204, 46);
             this.btnDashboard.TabIndex = 1;
             this.btnDashboard.Text = "Dashboard";
             this.btnDashboard.UseVisualStyleBackColor = true;
@@ -82,9 +83,9 @@ namespace UI
             // btnReservation
             // 
             this.btnReservation.Font = new System.Drawing.Font("Arial", 11F, System.Drawing.FontStyle.Bold);
-            this.btnReservation.Location = new System.Drawing.Point(12, 108);
+            this.btnReservation.Location = new System.Drawing.Point(15, 144);
             this.btnReservation.Name = "btnReservation";
-            this.btnReservation.Size = new System.Drawing.Size(180, 40);
+            this.btnReservation.Size = new System.Drawing.Size(204, 46);
             this.btnReservation.TabIndex = 2;
             this.btnReservation.Text = "Reservation";
             this.btnReservation.UseVisualStyleBackColor = true;
@@ -92,9 +93,9 @@ namespace UI
             // btnCheckInCheckOut
             // 
             this.btnCheckInCheckOut.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold);
-            this.btnCheckInCheckOut.Location = new System.Drawing.Point(12, 156);
+            this.btnCheckInCheckOut.Location = new System.Drawing.Point(15, 202);
             this.btnCheckInCheckOut.Name = "btnCheckInCheckOut";
-            this.btnCheckInCheckOut.Size = new System.Drawing.Size(180, 44);
+            this.btnCheckInCheckOut.Size = new System.Drawing.Size(204, 46);
             this.btnCheckInCheckOut.TabIndex = 3;
             this.btnCheckInCheckOut.Text = "Check-In / Check-Out";
             this.btnCheckInCheckOut.UseVisualStyleBackColor = true;
@@ -102,20 +103,21 @@ namespace UI
             // btnBilling
             // 
             this.btnBilling.Font = new System.Drawing.Font("Arial", 11F, System.Drawing.FontStyle.Bold);
-            this.btnBilling.Location = new System.Drawing.Point(12, 208);
+            this.btnBilling.Location = new System.Drawing.Point(15, 260);
             this.btnBilling.Name = "btnBilling";
-            this.btnBilling.Size = new System.Drawing.Size(180, 40);
+            this.btnBilling.Size = new System.Drawing.Size(204, 46);
             this.btnBilling.TabIndex = 4;
             this.btnBilling.Text = "Billing";
             this.btnBilling.UseVisualStyleBackColor = true;
             // 
             // btnLogin
             // 
-            this.btnLogin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnLogin.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
             this.btnLogin.Font = new System.Drawing.Font("Arial", 11F, System.Drawing.FontStyle.Bold);
-            this.btnLogin.Location = new System.Drawing.Point(12, 1486);
+            this.btnLogin.Location = new System.Drawing.Point(15, 973);
             this.btnLogin.Name = "btnLogin";
-            this.btnLogin.Size = new System.Drawing.Size(180, 40);
+            this.btnLogin.Size = new System.Drawing.Size(204, 45);
+            this.btnLogin.Visible = false;
             this.btnLogin.TabIndex = 5;
             this.btnLogin.Text = "Logout";
             this.btnLogin.UseVisualStyleBackColor = true;
@@ -126,7 +128,7 @@ namespace UI
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.ClientSize = new System.Drawing.Size(1416, 836);
+            this.ClientSize = new System.Drawing.Size(1920, 1040);
             this.Controls.Add(this.panelSidebar);
             this.IsMdiContainer = true;
             this.Name = "FrontDeskDashboard";

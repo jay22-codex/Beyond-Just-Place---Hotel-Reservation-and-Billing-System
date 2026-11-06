@@ -39,21 +39,18 @@
             this.label11 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.label17 = new System.Windows.Forms.Label();
-            this.label18 = new System.Windows.Forms.Label();
-            this.label19 = new System.Windows.Forms.Label();
+            this.lblStayOutput = new System.Windows.Forms.Label();
+            this.lblRoomOutput = new System.Windows.Forms.Label();
+            this.lblGuestNameOutput = new System.Windows.Forms.Label();
             this.label20 = new System.Windows.Forms.Label();
             this.label21 = new System.Windows.Forms.Label();
             this.label22 = new System.Windows.Forms.Label();
-            this.label23 = new System.Windows.Forms.Label();
-            this.textBox2 = new System.Windows.Forms.TextBox();
-            this.button1 = new System.Windows.Forms.Button();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.label15 = new System.Windows.Forms.Label();
-            this.button2 = new System.Windows.Forms.Button();
-            this.textBox3 = new System.Windows.Forms.TextBox();
+            this.lblPaymentAmount = new System.Windows.Forms.Label();
+            this.cmbPaymentMethod = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.cmbRoomType = new System.Windows.Forms.ComboBox();
+            this.label15 = new System.Windows.Forms.Label();
+            this.btnConfirmPayment = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -182,15 +179,12 @@
             // groupBox3
             // 
             this.groupBox3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.groupBox3.Controls.Add(this.label17);
-            this.groupBox3.Controls.Add(this.label18);
-            this.groupBox3.Controls.Add(this.label19);
+            this.groupBox3.Controls.Add(this.lblStayOutput);
+            this.groupBox3.Controls.Add(this.lblRoomOutput);
+            this.groupBox3.Controls.Add(this.lblGuestNameOutput);
             this.groupBox3.Controls.Add(this.label20);
             this.groupBox3.Controls.Add(this.label21);
             this.groupBox3.Controls.Add(this.label22);
-            this.groupBox3.Controls.Add(this.label23);
-            this.groupBox3.Controls.Add(this.textBox2);
-            this.groupBox3.Controls.Add(this.button1);
             this.groupBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox3.Location = new System.Drawing.Point(15, 50);
             this.groupBox3.Name = "groupBox3";
@@ -199,45 +193,45 @@
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Select Guest";
             // 
-            // label17
+            // lblStayOutput
             // 
-            this.label17.AutoSize = true;
-            this.label17.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label17.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label17.Location = new System.Drawing.Point(671, 73);
-            this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(108, 22);
-            this.label17.TabIndex = 34;
-            this.label17.Text = "Stay Output";
+            this.lblStayOutput.AutoSize = true;
+            this.lblStayOutput.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.lblStayOutput.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblStayOutput.Location = new System.Drawing.Point(665, 58);
+            this.lblStayOutput.Name = "lblStayOutput";
+            this.lblStayOutput.Size = new System.Drawing.Size(108, 22);
+            this.lblStayOutput.TabIndex = 34;
+            this.lblStayOutput.Text = "Stay Output";
             // 
-            // label18
+            // lblRoomOutput
             // 
-            this.label18.AutoSize = true;
-            this.label18.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label18.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label18.Location = new System.Drawing.Point(436, 73);
-            this.label18.Name = "label18";
-            this.label18.Size = new System.Drawing.Size(123, 22);
-            this.label18.TabIndex = 33;
-            this.label18.Text = "Room Output";
+            this.lblRoomOutput.AutoSize = true;
+            this.lblRoomOutput.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.lblRoomOutput.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblRoomOutput.Location = new System.Drawing.Point(430, 58);
+            this.lblRoomOutput.Name = "lblRoomOutput";
+            this.lblRoomOutput.Size = new System.Drawing.Size(123, 22);
+            this.lblRoomOutput.TabIndex = 33;
+            this.lblRoomOutput.Text = "Room Output";
             // 
-            // label19
+            // lblGuestNameOutput
             // 
-            this.label19.AutoSize = true;
-            this.label19.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label19.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label19.Location = new System.Drawing.Point(159, 73);
-            this.label19.Name = "label19";
-            this.label19.Size = new System.Drawing.Size(169, 22);
-            this.label19.TabIndex = 32;
-            this.label19.Text = "Guest name Ouput";
+            this.lblGuestNameOutput.AutoSize = true;
+            this.lblGuestNameOutput.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.lblGuestNameOutput.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblGuestNameOutput.Location = new System.Drawing.Point(153, 58);
+            this.lblGuestNameOutput.Name = "lblGuestNameOutput";
+            this.lblGuestNameOutput.Size = new System.Drawing.Size(169, 22);
+            this.lblGuestNameOutput.TabIndex = 32;
+            this.lblGuestNameOutput.Text = "Guest name Ouput";
             // 
             // label20
             // 
             this.label20.AutoSize = true;
             this.label20.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.label20.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label20.Location = new System.Drawing.Point(613, 73);
+            this.label20.Location = new System.Drawing.Point(607, 58);
             this.label20.Name = "label20";
             this.label20.Size = new System.Drawing.Size(52, 22);
             this.label20.TabIndex = 31;
@@ -248,7 +242,7 @@
             this.label21.AutoSize = true;
             this.label21.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.label21.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label21.Location = new System.Drawing.Point(363, 73);
+            this.label21.Location = new System.Drawing.Point(357, 58);
             this.label21.Name = "label21";
             this.label21.Size = new System.Drawing.Size(67, 22);
             this.label21.TabIndex = 30;
@@ -259,57 +253,58 @@
             this.label22.AutoSize = true;
             this.label22.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.label22.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label22.Location = new System.Drawing.Point(37, 73);
+            this.label22.Location = new System.Drawing.Point(31, 58);
             this.label22.Name = "label22";
             this.label22.Size = new System.Drawing.Size(118, 22);
             this.label22.TabIndex = 29;
             this.label22.Text = "Guest name:";
             // 
-            // label23
-            // 
-            this.label23.AutoSize = true;
-            this.label23.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label23.Font = new System.Drawing.Font("Arial", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label23.Location = new System.Drawing.Point(6, 32);
-            this.label23.Name = "label23";
-            this.label23.Size = new System.Drawing.Size(160, 22);
-            this.label23.TabIndex = 28;
-            this.label23.Text = "Find Guest name:";
-            // 
-            // textBox2
-            // 
-            this.textBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox2.Location = new System.Drawing.Point(172, 21);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(451, 38);
-            this.textBox2.TabIndex = 24;
-            // 
-            // button1
-            // 
-            this.button1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.button1.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.Location = new System.Drawing.Point(641, 21);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(125, 38);
-            this.button1.TabIndex = 20;
-            this.button1.Text = "Search";
-            this.button1.UseVisualStyleBackColor = false;
-            // 
             // groupBox4
             // 
             this.groupBox4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.groupBox4.Controls.Add(this.cmbRoomType);
+            this.groupBox4.Controls.Add(this.lblPaymentAmount);
+            this.groupBox4.Controls.Add(this.cmbPaymentMethod);
             this.groupBox4.Controls.Add(this.label1);
-            this.groupBox4.Controls.Add(this.textBox3);
             this.groupBox4.Controls.Add(this.label15);
-            this.groupBox4.Controls.Add(this.button2);
+            this.groupBox4.Controls.Add(this.btnConfirmPayment);
             this.groupBox4.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox4.Location = new System.Drawing.Point(15, 424);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(514, 181);
+            this.groupBox4.Size = new System.Drawing.Size(470, 147);
             this.groupBox4.TabIndex = 37;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Payment";
+            // 
+            // lblPaymentAmount
+            // 
+            this.lblPaymentAmount.AutoSize = true;
+            this.lblPaymentAmount.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.lblPaymentAmount.Font = new System.Drawing.Font("Arial", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblPaymentAmount.Location = new System.Drawing.Point(151, 27);
+            this.lblPaymentAmount.Name = "lblPaymentAmount";
+            this.lblPaymentAmount.Size = new System.Drawing.Size(45, 15);
+            this.lblPaymentAmount.TabIndex = 38;
+            this.lblPaymentAmount.Text = "Output";
+            // 
+            // cmbPaymentMethod
+            // 
+            this.cmbPaymentMethod.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cmbPaymentMethod.FormattingEnabled = true;
+            this.cmbPaymentMethod.Location = new System.Drawing.Point(10, 76);
+            this.cmbPaymentMethod.Name = "cmbPaymentMethod";
+            this.cmbPaymentMethod.Size = new System.Drawing.Size(268, 32);
+            this.cmbPaymentMethod.TabIndex = 37;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label1.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(7, 57);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(110, 16);
+            this.label1.TabIndex = 36;
+            this.label1.Text = "Payment Method:";
             // 
             // label15
             // 
@@ -322,57 +317,31 @@
             this.label15.TabIndex = 29;
             this.label15.Text = "Payment Amount:";
             // 
-            // button2
+            // btnConfirmPayment
             // 
-            this.button2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.button2.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button2.Location = new System.Drawing.Point(379, 46);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(109, 93);
-            this.button2.TabIndex = 20;
-            this.button2.Text = "Confirm Payment";
-            this.button2.UseVisualStyleBackColor = false;
-            // 
-            // textBox3
-            // 
-            this.textBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox3.Location = new System.Drawing.Point(10, 46);
-            this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(342, 29);
-            this.textBox3.TabIndex = 35;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label1.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(7, 88);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(110, 16);
-            this.label1.TabIndex = 36;
-            this.label1.Text = "Payment Method:";
-            // 
-            // cmbRoomType
-            // 
-            this.cmbRoomType.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmbRoomType.FormattingEnabled = true;
-            this.cmbRoomType.Location = new System.Drawing.Point(10, 107);
-            this.cmbRoomType.Name = "cmbRoomType";
-            this.cmbRoomType.Size = new System.Drawing.Size(342, 32);
-            this.cmbRoomType.TabIndex = 37;
+            this.btnConfirmPayment.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnConfirmPayment.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnConfirmPayment.Location = new System.Drawing.Point(296, 27);
+            this.btnConfirmPayment.Name = "btnConfirmPayment";
+            this.btnConfirmPayment.Size = new System.Drawing.Size(109, 93);
+            this.btnConfirmPayment.TabIndex = 20;
+            this.btnConfirmPayment.Text = "Confirm Payment";
+            this.btnConfirmPayment.UseVisualStyleBackColor = false;
+            this.btnConfirmPayment.Click += new System.EventHandler(this.btnConfirmPayment_Click);
             // 
             // FrontDesk_Billing_PaymentUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.ClientSize = new System.Drawing.Size(837, 627);
+            this.ClientSize = new System.Drawing.Size(837, 601);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.groupBox1);
             this.Name = "FrontDesk_Billing_PaymentUI";
             this.Text = "FrontDesk_Billing_PaymentUI";
+            this.Load += new System.EventHandler(this.FrontDesk_Billing_PaymentUI_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
@@ -398,20 +367,17 @@
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.GroupBox groupBox3;
-        private System.Windows.Forms.Label label17;
-        private System.Windows.Forms.Label label18;
-        private System.Windows.Forms.Label label19;
+        private System.Windows.Forms.Label lblStayOutput;
+        private System.Windows.Forms.Label lblRoomOutput;
+        private System.Windows.Forms.Label lblGuestNameOutput;
         private System.Windows.Forms.Label label20;
         private System.Windows.Forms.Label label21;
         private System.Windows.Forms.Label label22;
-        private System.Windows.Forms.Label label23;
-        private System.Windows.Forms.TextBox textBox2;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox textBox3;
         private System.Windows.Forms.Label label15;
-        private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.ComboBox cmbRoomType;
+        private System.Windows.Forms.Button btnConfirmPayment;
+        private System.Windows.Forms.ComboBox cmbPaymentMethod;
+        private System.Windows.Forms.Label lblPaymentAmount;
     }
 }

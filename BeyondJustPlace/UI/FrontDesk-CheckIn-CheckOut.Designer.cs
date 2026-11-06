@@ -93,7 +93,7 @@ namespace UI
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Arial", 16F, System.Drawing.FontStyle.Bold);
-            this.label2.Location = new System.Drawing.Point(596, 9);
+            this.label2.Location = new System.Drawing.Point(24, 20);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(229, 26);
             this.label2.TabIndex = 0;
@@ -102,7 +102,7 @@ namespace UI
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(10, 35);
+            this.label1.Location = new System.Drawing.Point(32, 48);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(126, 17);
             this.label1.TabIndex = 0;
@@ -111,7 +111,7 @@ namespace UI
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(10, 35);
+            this.label3.Location = new System.Drawing.Point(32, 51);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(126, 17);
             this.label3.TabIndex = 0;
@@ -120,7 +120,7 @@ namespace UI
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(30, 82);
+            this.label4.Location = new System.Drawing.Point(36, 132);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(51, 17);
             this.label4.TabIndex = 3;
@@ -129,7 +129,7 @@ namespace UI
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(350, 82);
+            this.label5.Location = new System.Drawing.Point(560, 132);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(52, 17);
             this.label5.TabIndex = 5;
@@ -138,7 +138,7 @@ namespace UI
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(615, 82);
+            this.label6.Location = new System.Drawing.Point(1070, 132);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(41, 17);
             this.label6.TabIndex = 7;
@@ -147,7 +147,7 @@ namespace UI
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(18, 62);
+            this.label7.Location = new System.Drawing.Point(35, 85);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(109, 17);
             this.label7.TabIndex = 2;
@@ -155,17 +155,18 @@ namespace UI
             // 
             // label9
             // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(18, 86);
+            this.label9.AutoSize = false;
+            this.label9.Location = new System.Drawing.Point(35, 125);
             this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(360, 17);
+            this.label9.Size = new System.Drawing.Size(1185, 2);
+            this.label9.BorderStyle = BorderStyle.Fixed3D;
             this.label9.TabIndex = 4;
-            this.label9.Text = "____________________________________________";
+            this.label9.Text = "";
             // 
             // label10
             // 
             this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(18, 115);
+            this.label10.Location = new System.Drawing.Point(35, 144);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(65, 17);
             this.label10.TabIndex = 5;
@@ -174,7 +175,7 @@ namespace UI
             // label11
             // 
             this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(18, 33);
+            this.label11.Location = new System.Drawing.Point(35, 42);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(112, 17);
             this.label11.TabIndex = 0;
@@ -182,102 +183,125 @@ namespace UI
             // 
             // lblGuestnameOutput
             // 
-            this.lblGuestnameOutput.AutoSize = true;
-            this.lblGuestnameOutput.Location = new System.Drawing.Point(100, 82);
+            this.lblGuestnameOutput.AutoSize = false;
+            this.lblGuestnameOutput.Location = new System.Drawing.Point(100, 132);
             this.lblGuestnameOutput.Name = "lblGuestnameOutput";
-            this.lblGuestnameOutput.Size = new System.Drawing.Size(52, 17);
+            this.lblGuestnameOutput.Font = new Font("Arial", 12F, FontStyle.Bold);
+            this.lblGuestnameOutput.Size = new System.Drawing.Size(400, 28);
+            this.lblGuestnameOutput.AutoEllipsis = true;
             this.lblGuestnameOutput.TabIndex = 4;
             this.lblGuestnameOutput.Text = "Output";
             // 
             // lblRoomOutput
             // 
-            this.lblRoomOutput.AutoSize = true;
-            this.lblRoomOutput.Location = new System.Drawing.Point(420, 82);
+            this.lblRoomOutput.AutoSize = false;
+            this.lblRoomOutput.Location = new System.Drawing.Point(630, 132);
             this.lblRoomOutput.Name = "lblRoomOutput";
-            this.lblRoomOutput.Size = new System.Drawing.Size(52, 17);
+            this.lblRoomOutput.Font = new Font("Arial", 12F, FontStyle.Bold);
+            this.lblRoomOutput.Size = new System.Drawing.Size(240, 28);
+            this.lblRoomOutput.AutoEllipsis = true;
             this.lblRoomOutput.TabIndex = 6;
             this.lblRoomOutput.Text = "Output";
             // 
             // lblStayOutput
             // 
-            this.lblStayOutput.AutoSize = true;
-            this.lblStayOutput.Location = new System.Drawing.Point(675, 82);
+            this.lblStayOutput.AutoSize = false;
+            this.lblStayOutput.Location = new System.Drawing.Point(1130, 132);
             this.lblStayOutput.Name = "lblStayOutput";
-            this.lblStayOutput.Size = new System.Drawing.Size(52, 17);
+            this.lblStayOutput.Font = new Font("Arial", 12F, FontStyle.Bold);
+            this.lblStayOutput.Size = new System.Drawing.Size(200, 28);
+            this.lblStayOutput.AutoEllipsis = true;
             this.lblStayOutput.TabIndex = 8;
             this.lblStayOutput.Text = "Output";
             // 
             // lblRoomCharges
             // 
-            this.lblRoomCharges.AutoSize = true;
-            this.lblRoomCharges.Location = new System.Drawing.Point(620, 33);
+            this.lblRoomCharges.AutoSize = false;
+            this.lblRoomCharges.Location = new System.Drawing.Point(1020, 42);
             this.lblRoomCharges.Name = "lblRoomCharges";
-            this.lblRoomCharges.Size = new System.Drawing.Size(52, 17);
+            this.lblRoomCharges.Font = new Font("Arial", 12F, FontStyle.Bold);
+            this.lblRoomCharges.Size = new System.Drawing.Size(206, 30);
+            this.lblRoomCharges.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.lblRoomCharges.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right);
             this.lblRoomCharges.TabIndex = 1;
             this.lblRoomCharges.Text = "Output";
             // 
             // lblOtherCharges
             // 
-            this.lblOtherCharges.AutoSize = true;
-            this.lblOtherCharges.Location = new System.Drawing.Point(620, 62);
+            this.lblOtherCharges.AutoSize = false;
+            this.lblOtherCharges.Location = new System.Drawing.Point(1020, 85);
             this.lblOtherCharges.Name = "lblOtherCharges";
-            this.lblOtherCharges.Size = new System.Drawing.Size(52, 17);
+            this.lblOtherCharges.Font = new Font("Arial", 12F, FontStyle.Bold);
+            this.lblOtherCharges.Size = new System.Drawing.Size(206, 30);
+            this.lblOtherCharges.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.lblOtherCharges.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right);
             this.lblOtherCharges.TabIndex = 3;
             this.lblOtherCharges.Text = "Output";
             // 
             // lblTotalBill
             // 
-            this.lblTotalBill.AutoSize = true;
-            this.lblTotalBill.Location = new System.Drawing.Point(620, 115);
+            this.lblTotalBill.AutoSize = false;
+            this.lblTotalBill.Location = new System.Drawing.Point(1020, 139);
             this.lblTotalBill.Name = "lblTotalBill";
-            this.lblTotalBill.Size = new System.Drawing.Size(52, 17);
+            this.lblTotalBill.Font = new Font("Arial", 12F, FontStyle.Bold);
+            this.lblTotalBill.Size = new System.Drawing.Size(206, 30);
+            this.lblTotalBill.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.lblTotalBill.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right);
             this.lblTotalBill.TabIndex = 6;
             this.lblTotalBill.Text = "Output";
             // 
             // btnSearchCheckIn
             // 
-            this.btnSearchCheckIn.Location = new System.Drawing.Point(640, 28);
+            this.btnSearchCheckIn.Location = new System.Drawing.Point(1120, 40);
             this.btnSearchCheckIn.Name = "btnSearchCheckIn";
-            this.btnSearchCheckIn.Size = new System.Drawing.Size(150, 35);
+            this.btnSearchCheckIn.Size = new System.Drawing.Size(170, 39);
+            this.btnSearchCheckIn.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right);
             this.btnSearchCheckIn.TabIndex = 2;
             this.btnSearchCheckIn.Text = "Search";
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(640, 130);
+            this.button1.Location = new System.Drawing.Point(1350, 255);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(165, 40);
+            this.button1.Font = new Font("Arial", 11F, FontStyle.Bold);
+            this.button1.Size = new System.Drawing.Size(225, 56);
+            this.button1.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right);
             this.button1.TabIndex = 4;
             this.button1.Text = "Confirm Check-In";
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(640, 28);
+            this.button3.Location = new System.Drawing.Point(1120, 43);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(150, 35);
+            this.button3.Size = new System.Drawing.Size(170, 39);
+            this.button3.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right);
             this.button3.TabIndex = 2;
             this.button3.Text = "Search";
             // 
             // btnCheckOut
             // 
-            this.btnCheckOut.Location = new System.Drawing.Point(605, 280);
+            this.btnCheckOut.Location = new System.Drawing.Point(1322, 325);
             this.btnCheckOut.Name = "btnCheckOut";
-            this.btnCheckOut.Size = new System.Drawing.Size(150, 50);
+            this.btnCheckOut.Font = new Font("Arial", 11F, FontStyle.Bold);
+            this.btnCheckOut.Size = new System.Drawing.Size(252, 58);
+            this.btnCheckOut.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right);
             this.btnCheckOut.TabIndex = 10;
             this.btnCheckOut.Text = "Confirm Check-Out";
             // 
             // txtCheckInGuest
             // 
-            this.txtCheckInGuest.Location = new System.Drawing.Point(170, 30);
+            this.txtCheckInGuest.Location = new System.Drawing.Point(200, 42);
             this.txtCheckInGuest.Name = "txtCheckInGuest";
-            this.txtCheckInGuest.Size = new System.Drawing.Size(450, 24);
+            this.txtCheckInGuest.Size = new System.Drawing.Size(890, 34);
+            this.txtCheckInGuest.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.txtCheckInGuest.TabIndex = 1;
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(170, 30);
+            this.textBox1.Location = new System.Drawing.Point(200, 45);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(450, 24);
+            this.textBox1.Size = new System.Drawing.Size(890, 34);
+            this.textBox1.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.textBox1.TabIndex = 1;
             // 
             // groupBox4
@@ -289,9 +313,10 @@ namespace UI
             this.groupBox4.Controls.Add(this.dgvCheckInReservations);
             this.groupBox4.Controls.Add(this.button1);
             this.groupBox4.Font = new System.Drawing.Font("Arial", 11F);
-            this.groupBox4.Location = new System.Drawing.Point(12, 38);
+            this.groupBox4.Location = new System.Drawing.Point(18, 73);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(830, 190);
+            this.groupBox4.Size = new System.Drawing.Size(1623, 357);
+            this.groupBox4.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.groupBox4.TabIndex = 2;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Check-In";
@@ -304,9 +329,17 @@ namespace UI
             this.columnRoom,
             this.columnCheckInDate,
             this.columnStatus});
-            this.dgvCheckInReservations.Location = new System.Drawing.Point(28, 75);
+            this.dgvCheckInReservations.Location = new System.Drawing.Point(32, 107);
             this.dgvCheckInReservations.Name = "dgvCheckInReservations";
-            this.dgvCheckInReservations.Size = new System.Drawing.Size(595, 100);
+            this.dgvCheckInReservations.AllowUserToDeleteRows = false;
+            this.dgvCheckInReservations.ReadOnly = true;
+            this.dgvCheckInReservations.MultiSelect = false;
+            this.dgvCheckInReservations.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            this.dgvCheckInReservations.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            this.dgvCheckInReservations.RowTemplate.Height = 30;
+            this.dgvCheckInReservations.ColumnHeadersHeight = 35;
+            this.dgvCheckInReservations.Size = new System.Drawing.Size(1250, 210);
+            this.dgvCheckInReservations.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.dgvCheckInReservations.TabIndex = 3;
             // 
             // columnGuestname
@@ -344,9 +377,10 @@ namespace UI
             this.groupBox1.Controls.Add(this.groupBox2);
             this.groupBox1.Controls.Add(this.btnCheckOut);
             this.groupBox1.Font = new System.Drawing.Font("Arial", 11F);
-            this.groupBox1.Location = new System.Drawing.Point(20, 275);
+            this.groupBox1.Location = new System.Drawing.Point(18, 446);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(830, 345);
+            this.groupBox1.Size = new System.Drawing.Size(1623, 463);
+            this.groupBox1.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.groupBox1.TabIndex = 3;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Check-Out";
@@ -361,9 +395,10 @@ namespace UI
             this.groupBox2.Controls.Add(this.label9);
             this.groupBox2.Controls.Add(this.label10);
             this.groupBox2.Controls.Add(this.lblTotalBill);
-            this.groupBox2.Location = new System.Drawing.Point(28, 119);
+            this.groupBox2.Location = new System.Drawing.Point(28, 205);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(725, 150);
+            this.groupBox2.Size = new System.Drawing.Size(1260, 186);
+            this.groupBox2.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.groupBox2.TabIndex = 9;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Final Bill";
@@ -372,7 +407,7 @@ namespace UI
             // 
             this.AutoScroll = true;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.ClientSize = new System.Drawing.Size(1413, 837);
+            this.ClientSize = new System.Drawing.Size(1660, 930);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox1);

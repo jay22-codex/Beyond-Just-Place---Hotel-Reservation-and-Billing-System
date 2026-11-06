@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using BusinessLogic.Repository;
 using Model;
 
@@ -15,17 +16,22 @@ namespace BusinessLogic
             return repository.SearchGuest(keyword);
         }
 
-        public Guest CreateGuest(string guestName, string contactNumber)
+        public Guest CreateGuest(
+            string guestName,
+            string contactNumber)
         {
             if (guestName.Trim() == "")
-                throw new Exception("Please enter guest name.");
+                throw new Exception(
+                    "Please enter guest name.");
 
             if (contactNumber.Trim() == "")
-                throw new Exception("Please enter contact number.");
+                throw new Exception(
+                    "Please enter contact number.");
 
-            int guestId = repository.CreateGuest(
-                guestName,
-                contactNumber);
+            int guestId =
+                repository.CreateGuest(
+                    guestName,
+                    contactNumber);
 
             Guest guest = new Guest();
 
@@ -50,7 +56,7 @@ namespace BusinessLogic
                 throw new Exception(
                     "Check-out date must be later than check-in date.");
 
-            if (roomType == "")
+            if (roomType.Trim() == "")
                 throw new Exception(
                     "Please select a room type.");
 
@@ -79,7 +85,7 @@ namespace BusinessLogic
                 throw new Exception(
                     "Check-out date must be later than check-in date.");
 
-            if (status == "")
+            if (status.Trim() == "")
                 throw new Exception(
                     "Please select reservation status.");
 
@@ -91,27 +97,38 @@ namespace BusinessLogic
                 status);
         }
 
-        public void CheckInGuest(int reservationId)
-        {
-            if (reservationId <= 0)
-            {
-                throw new Exception("Invalid reservation.");
-            }
-
-            repository.CheckInGuest(reservationId);
-        }
-
         public bool CancelReservation(Guest guest)
         {
             if (guest == null)
-            {
-                throw new Exception("Please select a guest.");
-            }
+                throw new Exception(
+                    "Please select a guest.");
 
             int result =
-                repository.CancelReservation(guest.GuestId);
+                repository.CancelReservation(
+                    guest.GuestId);
 
             return result > 0;
+        }
+
+        public DataTable SearchCheckInReservations(
+            string guestName)
+        {
+            if (guestName.Trim() == "")
+                throw new Exception(
+                    "Please enter guest name.");
+
+            return repository.SearchCheckInReservations(
+                guestName);
+        }
+
+        public void CheckInGuest(int reservationId)
+        {
+            if (reservationId <= 0)
+                throw new Exception(
+                    "Invalid reservation.");
+
+            repository.CheckInGuest(
+                reservationId);
         }
 
         public int GetTodayReservationCount()

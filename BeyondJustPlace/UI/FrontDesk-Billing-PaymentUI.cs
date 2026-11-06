@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Windows.Forms;
 using BusinessLogic;
 using Model;
@@ -7,92 +8,320 @@ namespace UI
 {
     public partial class FrontDesk_Billing_PaymentUI : Form
     {
-        private readonly FrontDeskOperationsService operations = new FrontDeskOperationsService();
         private readonly BillingInfo selectedBilling;
+
+        // Check-In/Check-Out reads this after the Billing form closes.
         public bool PaymentCompleted { get; private set; }
 
-        // Parameterless constructor is required for Visual Studio's WinForms Designer.
-        public FrontDesk_Billing_PaymentUI() : this(null) { }
+        // Keep this constructor for the Windows Forms Designer.
+        public FrontDesk_Billing_PaymentUI() : this(null)
+        {
+        }
 
+        // Called by Check-Out and FrontDeskDashboard.OpenBilling().
         public FrontDesk_Billing_PaymentUI(BillingInfo billing)
         {
             InitializeComponent();
             selectedBilling = billing;
 
-            // Existing Designer names are used exactly as uploaded:
-            // label19 = guest, label18 = room, label17 = stay,
-            // cmbRoomType = payment method, textBox3 = payment amount,
-            // button2 = Confirm Payment.
+            // Prevent duplicate event calls whether or not the Designer
+            // already connects these two events.
+            this.Load -= FrontDesk_Billing_PaymentUI_Load;
+            this.Load += FrontDesk_Billing_PaymentUI_Load;
+
+            Button confirm = FindControl<Button>(
+                "btnConfirmPayment", "button2");
+
+            if (confirm != null)
+            {
+                confirm.Click -= btnConfirmPayment_Click;
+                confirm.Click += btnConfirmPayment_Click;
+            }
+        }
+
+        private void FrontDesk_Billing_PaymentUI_Load(
+            object sender, EventArgs e)
+        {
+            // Supports both versions of your Billing Designer.
+            ComboBox method = FindControl<ComboBox>(
+                "cmbPaymentMethod", "cmbRoomType");
+
+            if (method != null)
+            {
+                method.Items.Clear();
+                method.Items.AddRange(
+                    new object[] { "Cash", "GCash", "Card" });
+
+                method.DropDownStyle = ComboBoxStyle.DropDownList;
+                method.SelectedIndex = -1;
+            }
+
+            // Older Designer uses a payment amount TextBox.
+            TextBox amountBox = FindControl<TextBox>("textBox3");
+
+            if (amountBox != null)
+                amountBox.ReadOnly = true;
+
+            // Hide obsolete guest-search fields in the older Designer.
+            // Guests are selected from Check-Out.
+            if (FindControl<TextBox>("textBox2") != null)
+            {
+                Control searchLabel =
+                    FindControl<Control>("label23");
+
+                Control searchText =
+                    FindControl<Control>("textBox2");
+
+                Control searchButton =
+                    FindControl<Control>("button1");
+
+                if (searchLabel != null)
+                    searchLabel.Visible = false;
+
+                if (searchText != null)
+                    searchText.Visible = false;
+
+                if (searchButton != null)
+                    searchButton.Visible = false;
+            }
+
             groupBox3.Text = "Selected Guest";
-            label23.Visible = false;
-            textBox2.Visible = false;
-            button1.Visible = false;
-            cmbRoomType.Items.Clear();
-            cmbRoomType.Items.AddRange(new object[] { "Cash", "GCash", "Card" });
-            cmbRoomType.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbRoomType.SelectedIndex = -1;
-            textBox3.ReadOnly = true;
-            button2.Click += btnConfirmPayment_Click;
-            Load += FrontDesk_Billing_PaymentUI_Load;
+
+            DisplayBilling();
         }
 
-        private void FrontDesk_Billing_PaymentUI_Load(object sender, EventArgs e)
+        // =========================================
+        // DISPLAY GUEST AND BILLING INFORMATION
+        // =========================================
+
+        private void DisplayBilling()
         {
+            Button confirm = FindControl<Button>(
+                "btnConfirmPayment", "button2");
+
             if (selectedBilling == null)
             {
-                label19.Text = "No guest selected";
-                label18.Text = "Output";
-                label17.Text = "Output";
-                lblRoomCharges.Text = "₱0.00";
-                lblOtherCharges.Text = "₱0.00";
-                lblTotalBill.Text = "₱0.00";
-                textBox3.Text = "0.00";
-                button2.Enabled = false;
+                SetOutput(
+                    "No guest selected",
+                    "lblGuestNameOutput",
+                    "label19");
+
+                SetOutput(
+                    "Output",
+                    "lblRoomOutput",
+                    "label18");
+
+                SetOutput(
+                    "Output",
+                    "lblStayOutput",
+                    "label17");
+
+                lblRoomCharges.Text = "PHP 0.00";
+                lblOtherCharges.Text = "PHP 0.00";
+                lblTotalBill.Text = "PHP 0.00";
+
+                SetOutput(
+                    "0.00",
+                    "lblPaymentAmount",
+                    "textBox3");
+
+                if (confirm != null)
+                    confirm.Enabled = false;
+
                 return;
             }
-            label19.Text = selectedBilling.GuestName;
-            label18.Text = selectedBilling.RoomNumber;
-            label17.Text = selectedBilling.StayDays + " night(s)";
-            lblRoomCharges.Text = "₱" + selectedBilling.RoomCharges.ToString("N2");
-            lblOtherCharges.Text = "₱" + selectedBilling.OtherCharges.ToString("N2");
-            lblTotalBill.Text = "₱" + selectedBilling.TotalBill.ToString("N2");
-            textBox3.Text = selectedBilling.TotalBill.ToString("N2");
+
+            // GUEST NAME
+            SetOutput(
+                selectedBilling.GuestName,
+                "lblGuestNameOutput",
+                "label19");
+
+            // ROOM NUMBER
+            SetOutput(
+                selectedBilling.RoomNumber,
+                "lblRoomOutput",
+                "label18");
+
+            // LENGTH OF STAY
+            SetOutput(
+                selectedBilling.StayDays + " night(s)",
+                "lblStayOutput",
+                "label17");
+
+            // ROOM CHARGES
+            lblRoomCharges.Text =
+                "PHP " +
+                selectedBilling.RoomCharges.ToString("N2");
+
+            // OTHER CHARGES
+            lblOtherCharges.Text =
+                "PHP " +
+                selectedBilling.OtherCharges.ToString("N2");
+
+            // TOTAL BILL
+            lblTotalBill.Text =
+                "PHP " +
+                selectedBilling.TotalBill.ToString("N2");
+
+            // PAYMENT AMOUNT
+            SetOutput(
+                selectedBilling.TotalBill.ToString("N2"),
+                "lblPaymentAmount",
+                "textBox3");
+
+            if (confirm != null)
+            {
+                confirm.Enabled =
+                    selectedBilling.ReservationId > 0 &&
+                    !PaymentCompleted;
+            }
         }
 
-        private void btnConfirmPayment_Click(object sender, EventArgs e)
+        // =========================================
+        // CONFIRM PAYMENT AND CHECK-OUT
+        // =========================================
+
+        private void btnConfirmPayment_Click(
+            object sender, EventArgs e)
         {
-            if (selectedBilling == null)
+            if (PaymentCompleted)
+                return;
+
+            if (selectedBilling == null ||
+                selectedBilling.ReservationId <= 0)
             {
-                MessageBox.Show("Go to Check-Out and select a checked-in guest first.");
+                MessageBox.Show(
+                    "Select a checked-in guest in Check-Out first.",
+                    "No Guest",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
                 return;
             }
-            if (cmbRoomType.SelectedIndex < 0)
+
+            ComboBox method = FindControl<ComboBox>(
+                "cmbPaymentMethod", "cmbRoomType");
+
+            if (method == null || method.SelectedIndex < 0)
             {
-                MessageBox.Show("Select Cash, GCash, or Card.");
+                MessageBox.Show(
+                    "Select Cash, GCash, or Card.",
+                    "Payment Method",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
                 return;
             }
-            if (MessageBox.Show("Confirm payment of ₱" + selectedBilling.TotalBill.ToString("N2") +
-                " using " + cmbRoomType.Text + "?", "Confirm Payment",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+
+            DialogResult answer = MessageBox.Show(
+                "Confirm that payment has been received?\n\n" +
+                "Guest: " + selectedBilling.GuestName + "\n" +
+                "Room: " + selectedBilling.RoomNumber + "\n" +
+                "Amount: PHP " +
+                    selectedBilling.TotalBill.ToString("N2") + "\n" +
+                "Method: " + method.Text,
+                "Confirm Payment",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (answer != DialogResult.Yes)
+                return;
+
+            Button confirm = FindControl<Button>(
+                "btnConfirmPayment", "button2");
 
             try
             {
-                button2.Enabled = false;
-                operations.CompleteCheckout(selectedBilling, cmbRoomType.Text);
+                if (confirm != null)
+                    confirm.Enabled = false;
+
+                // Save the payment and update the reservation
+                // to Checked Out in one SQL transaction.
+                FrontDeskOperationsService operations =
+                    new FrontDeskOperationsService();
+
+                operations.CompleteCheckout(
+                    selectedBilling,
+                    method.Text);
+
+                // Report success only after SQL completes.
                 PaymentCompleted = true;
-                MessageBox.Show("Payment saved. Guest checked out successfully.");
-                FrontDeskDashboard parent = MdiParent as FrontDeskDashboard;
-                if (parent != null) parent.ShowDashboard();
-                else Close();
+
+                selectedBilling.ReservationStatus = "Checked Out";
+
+                MessageBox.Show(
+                    "Payment recorded in the database.\n" +
+                    "Guest checked out successfully.",
+                    "Success",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                // Return to the Front Desk Dashboard if this
+                // is running as an MDI child.
+                FrontDeskDashboard dashboard =
+                    MdiParent as FrontDeskDashboard;
+
+                if (dashboard != null)
+                {
+                    dashboard.ShowDashboard();
+                }
+                else
+                {
+                    Close();
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Payment error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    ex.Message,
+                    "Payment Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
             finally
             {
-                if (!IsDisposed && !PaymentCompleted) button2.Enabled = true;
+                if (!IsDisposed &&
+                    confirm != null &&
+                    !PaymentCompleted)
+                {
+                    confirm.Enabled = true;
+                }
             }
+        }
+
+        // =========================================
+        // FIND CONTROLS FROM EITHER DESIGNER VERSION
+        // =========================================
+
+        private T FindControl<T>(params string[] names)
+            where T : Control
+        {
+            foreach (string name in names)
+            {
+                Control[] matches = Controls.Find(name, true);
+
+                foreach (Control match in matches)
+                {
+                    T typed = match as T;
+
+                    if (typed != null)
+                        return typed;
+                }
+            }
+
+            return null;
+        }
+
+        private void SetOutput(
+            string value,
+            params string[] controlNames)
+        {
+            Control control =
+                FindControl<Control>(controlNames);
+
+            if (control != null)
+                control.Text = value;
         }
     }
 }

@@ -1,4 +1,3 @@
-﻿
 namespace Model
 {
     public class BillingInfo

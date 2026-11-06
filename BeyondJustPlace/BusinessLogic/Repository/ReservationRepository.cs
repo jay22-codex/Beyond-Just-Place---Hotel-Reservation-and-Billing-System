@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
 using System.Data.SqlClient;
 using Model;
 
@@ -13,7 +14,7 @@ namespace BusinessLogic.Repository
 
         public List<Guest> SearchGuest(string keyword)
         {
-            List<Guest> guestList = new List<Guest>();
+            List<Guest> guests = new List<Guest>();
 
             using (SqlConnection connection =
                 new SqlConnection(connectionString))
@@ -50,11 +51,11 @@ namespace BusinessLogic.Repository
                     guest.ContactNumber =
                         reader["ContactNumber"].ToString();
 
-                    guestList.Add(guest);
+                    guests.Add(guest);
                 }
             }
 
-            return guestList;
+            return guests;
         }
 
         public int CreateGuest(
@@ -69,9 +70,7 @@ namespace BusinessLogic.Repository
                 string query =
                     @"INSERT INTO dbo.Guests
                       (GuestName, ContactNumber)
-
                       OUTPUT INSERTED.GuestId
-
                       VALUES
                       (@guestName, @contactNumber)";
 
@@ -121,12 +120,13 @@ namespace BusinessLogic.Repository
 
             return types;
         }
+
         public List<Room> GetAvailableRooms(
             DateTime checkIn,
             DateTime checkOut,
             string roomType)
         {
-            List<Room> roomList =
+            List<Room> rooms =
                 new List<Room>();
 
             using (SqlConnection connection =
@@ -138,23 +138,20 @@ namespace BusinessLogic.Repository
                     @"SELECT
                         r.RoomId,
                         r.RoomNumber,
-                        r.RoomType
-
+                        r.RoomType,
+                        r.RoomRate,
+                        r.RoomStatus
                       FROM dbo.Rooms r
-
                       WHERE r.RoomType = @roomType
-
                       AND r.RoomId NOT IN
                       (
                           SELECT RoomId
                           FROM dbo.Reservations
-
-                          WHERE ReservationStatus <> 'Cancelled'
-
+                          WHERE ReservationStatus IN
+                          ('Pending', 'Confirmed', 'Checked In')
                           AND CheckInDate < @checkOut
                           AND CheckOutDate > @checkIn
                       )
-
                       ORDER BY r.RoomNumber";
 
                 SqlCommand command =
@@ -189,12 +186,20 @@ namespace BusinessLogic.Repository
                     room.RoomType =
                         reader["RoomType"].ToString();
 
-                    roomList.Add(room);
+                    room.RoomRate =
+                        Convert.ToDecimal(
+                            reader["RoomRate"]);
+
+                    room.RoomStatus =
+                        reader["RoomStatus"].ToString();
+
+                    rooms.Add(room);
                 }
             }
 
-            return roomList;
+            return rooms;
         }
+
         public int CreateReservation(
             int guestId,
             int roomId,
@@ -209,18 +214,16 @@ namespace BusinessLogic.Repository
 
                 string query =
                     @"INSERT INTO dbo.Reservations
-              (
+                      (
                           GuestId,
                           RoomId,
                           CheckInDate,
                           CheckOutDate,
                           ReservationStatus
                       )
-
                       OUTPUT INSERTED.ReservationId
-
                       VALUES
-               (
+                      (
                           @guestId,
                           @roomId,
                           @checkIn,
@@ -229,60 +232,124 @@ namespace BusinessLogic.Repository
                       )";
 
                 SqlCommand command =
-                             new SqlCommand(query, connection);
+                    new SqlCommand(query, connection);
 
                 command.Parameters.AddWithValue(
                     "@guestId",
                     guestId);
 
                 command.Parameters.AddWithValue(
-                                    "@roomId",
-                                    roomId);
+                    "@roomId",
+                    roomId);
 
                 command.Parameters.AddWithValue(
-                         "@checkIn",
-                         checkIn.Date);
+                    "@checkIn",
+                    checkIn.Date);
 
                 command.Parameters.AddWithValue(
                     "@checkOut",
                     checkOut.Date);
 
                 command.Parameters.AddWithValue(
-                        "@status",
-                        status);
+                    "@status",
+                    status);
+
                 return Convert.ToInt32(
                     command.ExecuteScalar());
             }
         }
-        public int GetTodayReservationCount()
+
+        public int CancelReservation(int guestId)
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                connection.Open();
-
-                string query =
-                    @"SELECT COUNT(*)
-              FROM dbo.Reservations
-              WHERE CAST(CheckInDate AS DATE) = CAST(GETDATE() AS DATE)
-              AND ReservationStatus <> 'Cancelled'";
-
-                SqlCommand command = new SqlCommand(query, connection);
-
-                return Convert.ToInt32(command.ExecuteScalar());
-            }
-        }
-        public void CheckInGuest(int reservationId)
-        {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection =
+                new SqlConnection(connectionString))
             {
                 connection.Open();
 
                 string query =
                     @"UPDATE dbo.Reservations
-              SET ReservationStatus = 'Checked In'
-              WHERE ReservationId = @reservationId";
+                      SET ReservationStatus = 'Cancelled'
+                      WHERE ReservationId =
+                      (
+                          SELECT TOP 1 ReservationId
+                          FROM dbo.Reservations
+                          WHERE GuestId = @guestId
+                          AND ReservationStatus IN
+                          ('Pending', 'Confirmed')
+                          ORDER BY ReservationId DESC
+                      )";
 
-                SqlCommand command = new SqlCommand(query, connection);
+                SqlCommand command =
+                    new SqlCommand(query, connection);
+
+                command.Parameters.AddWithValue(
+                    "@guestId",
+                    guestId);
+
+                return command.ExecuteNonQuery();
+            }
+        }
+
+        public DataTable SearchCheckInReservations(
+            string guestName)
+        {
+            DataTable table =
+                new DataTable();
+
+            using (SqlConnection connection =
+                new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                string query =
+                    @"SELECT
+                        r.ReservationId,
+                        g.GuestName,
+                        rm.RoomNumber,
+                        r.CheckInDate,
+                        r.ReservationStatus
+                      FROM dbo.Reservations r
+                      INNER JOIN dbo.Guests g
+                      ON r.GuestId = g.GuestId
+                      INNER JOIN dbo.Rooms rm
+                      ON r.RoomId = rm.RoomId
+                      WHERE g.GuestName LIKE @guestName
+                      AND r.ReservationStatus IN
+                      ('Pending', 'Confirmed')
+                      ORDER BY r.ReservationId DESC";
+
+                SqlCommand command =
+                    new SqlCommand(query, connection);
+
+                command.Parameters.AddWithValue(
+                    "@guestName",
+                    "%" + guestName + "%");
+
+                SqlDataAdapter adapter =
+                    new SqlDataAdapter(command);
+
+                adapter.Fill(table);
+            }
+
+            return table;
+        }
+
+        public void CheckInGuest(int reservationId)
+        {
+            using (SqlConnection connection =
+                new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                string query =
+                    @"UPDATE dbo.Reservations
+                      SET ReservationStatus = 'Checked In'
+                      WHERE ReservationId = @reservationId
+                      AND ReservationStatus IN
+                      ('Pending', 'Confirmed')";
+
+                SqlCommand command =
+                    new SqlCommand(query, connection);
 
                 command.Parameters.AddWithValue(
                     "@reservationId",
@@ -292,126 +359,137 @@ namespace BusinessLogic.Repository
             }
         }
 
-        public int GetCurrentCheckedInCount()
+        public int GetTodayReservationCount()
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection =
+                new SqlConnection(connectionString))
             {
                 connection.Open();
 
                 string query =
                     @"SELECT COUNT(*)
-              FROM dbo.Reservations
-              WHERE ReservationStatus = 'Checked In'";
+                      FROM dbo.Reservations
+                      WHERE CAST(CheckInDate AS DATE) =
+                            CAST(GETDATE() AS DATE)
+                      AND ReservationStatus <> 'Cancelled'";
 
-                SqlCommand command = new SqlCommand(query, connection);
+                SqlCommand command =
+                    new SqlCommand(query, connection);
 
-                return Convert.ToInt32(command.ExecuteScalar());
+                return Convert.ToInt32(
+                    command.ExecuteScalar());
+            }
+        }
+
+        public int GetCurrentCheckedInCount()
+        {
+            using (SqlConnection connection =
+                new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                string query =
+                    @"SELECT COUNT(*)
+                      FROM dbo.Reservations
+                      WHERE ReservationStatus = 'Checked In'";
+
+                SqlCommand command =
+                    new SqlCommand(query, connection);
+
+                return Convert.ToInt32(
+                    command.ExecuteScalar());
             }
         }
 
         public int GetExpectedCheckInsTodayCount()
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection =
+                new SqlConnection(connectionString))
             {
                 connection.Open();
 
                 string query =
                     @"SELECT COUNT(*)
-              FROM dbo.Reservations
-              WHERE CAST(CheckInDate AS DATE) = CAST(GETDATE() AS DATE)
-              AND ReservationStatus IN ('Pending', 'Confirmed')";
+                      FROM dbo.Reservations
+                      WHERE CAST(CheckInDate AS DATE) =
+                            CAST(GETDATE() AS DATE)
+                      AND ReservationStatus IN
+                      ('Pending', 'Confirmed')";
 
-                SqlCommand command = new SqlCommand(query, connection);
+                SqlCommand command =
+                    new SqlCommand(query, connection);
 
-                return Convert.ToInt32(command.ExecuteScalar());
+                return Convert.ToInt32(
+                    command.ExecuteScalar());
             }
         }
 
         public int GetPendingReservationCount()
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection =
+                new SqlConnection(connectionString))
             {
                 connection.Open();
 
                 string query =
                     @"SELECT COUNT(*)
-              FROM dbo.Reservations
-              WHERE ReservationStatus = 'Pending'";
+                      FROM dbo.Reservations
+                      WHERE ReservationStatus = 'Pending'";
 
-                SqlCommand command = new SqlCommand(query, connection);
+                SqlCommand command =
+                    new SqlCommand(query, connection);
 
-                return Convert.ToInt32(command.ExecuteScalar());
+                return Convert.ToInt32(
+                    command.ExecuteScalar());
             }
         }
 
         public List<string> GetLatestActivity()
         {
-            List<string> activities = new List<string>();
+            List<string> activities =
+                new List<string>();
 
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection =
+                new SqlConnection(connectionString))
             {
                 connection.Open();
 
                 string query =
                     @"SELECT TOP 10
-                r.ReservationId,
-                g.GuestName,
-                rm.RoomNumber,
-                r.ReservationStatus
-              FROM dbo.Reservations r
-              INNER JOIN dbo.Guests g
-              ON r.GuestId = g.GuestId
-              INNER JOIN dbo.Rooms rm
-              ON r.RoomId = rm.RoomId
-              ORDER BY r.ReservationId DESC";
+                        r.ReservationId,
+                        g.GuestName,
+                        rm.RoomNumber,
+                        r.ReservationStatus
+                      FROM dbo.Reservations r
+                      INNER JOIN dbo.Guests g
+                      ON r.GuestId = g.GuestId
+                      INNER JOIN dbo.Rooms rm
+                      ON r.RoomId = rm.RoomId
+                      ORDER BY r.ReservationId DESC";
 
-                SqlCommand command = new SqlCommand(query, connection);
+                SqlCommand command =
+                    new SqlCommand(query, connection);
 
-                SqlDataReader reader = command.ExecuteReader();
+                SqlDataReader reader =
+                    command.ExecuteReader();
 
                 while (reader.Read())
                 {
                     string activity =
                         "Reservation #" +
-                        reader["ReservationId"].ToString() +
+                        reader["ReservationId"] +
                         " - " +
-                        reader["GuestName"].ToString() +
+                        reader["GuestName"] +
                         " - Room " +
-                        reader["RoomNumber"].ToString() +
+                        reader["RoomNumber"] +
                         " - " +
-                        reader["ReservationStatus"].ToString();
+                        reader["ReservationStatus"];
 
                     activities.Add(activity);
                 }
             }
 
             return activities;
-        }
-       
-        public int CancelReservation(int guestId)
-        {
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                connection.Open();
-
-                string query =
-                    @"UPDATE dbo.Reservations
-              SET ReservationStatus = 'Cancelled'
-              WHERE ReservationId =
-              (
-                  SELECT TOP 1 ReservationId
-                  FROM dbo.Reservations
-                  WHERE GuestId = @guestId
-                  AND ReservationStatus IN ('Pending', 'Confirmed')
-                  ORDER BY ReservationId DESC
-              )";
-
-                SqlCommand command = new SqlCommand(query, connection);
-
-                command.Parameters.AddWithValue("@guestId", guestId);
-
-                return command.ExecuteNonQuery();
-            }
         }
     }
 }
