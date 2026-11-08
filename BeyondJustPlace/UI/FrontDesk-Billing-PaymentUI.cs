@@ -85,7 +85,7 @@ namespace UI
                     searchButton.Visible = false;
             }
 
-            groupBox3.Text = "Selected Guest";
+            txtSelectGuest.Text = "Selected Guest";
 
             DisplayBilling();
         }
@@ -116,7 +116,7 @@ namespace UI
                     "lblStayOutput",
                     "label17");
 
-                lblRoomCharges.Text = "PHP 0.00";
+                lblRoomChargesRate.Text = "PHP 0.00";
                 lblOtherCharges.Text = "PHP 0.00";
                 lblTotalBill.Text = "PHP 0.00";
 
@@ -150,7 +150,7 @@ namespace UI
                 "label17");
 
             // ROOM CHARGES
-            lblRoomCharges.Text =
+            lblRoomChargesRate.Text =
                 "PHP " +
                 selectedBilling.RoomCharges.ToString("N2");
 
@@ -322,6 +322,31 @@ namespace UI
 
             if (control != null)
                 control.Text = value;
+        }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblCheckIn_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblReservationID_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label12_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblRoomChargesAmount_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
