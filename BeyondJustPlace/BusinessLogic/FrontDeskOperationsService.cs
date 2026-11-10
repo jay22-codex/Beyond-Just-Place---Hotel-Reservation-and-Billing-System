@@ -110,6 +110,8 @@ namespace BusinessLogic
                     billing.RoomRate = Convert.ToDecimal(reader["RoomRate"]);
                     DateTime arrival = Convert.ToDateTime(reader["CheckInDate"]);
                     DateTime departure = Convert.ToDateTime(reader["CheckOutDate"]);
+                    billing.CheckInDate = arrival;
+                    billing.CheckOutDate = departure;
                     billing.StayDays = Math.Max(1, (departure.Date - arrival.Date).Days);
                     billing.RoomCharges = billing.StayDays * billing.RoomRate;
                     billing.OtherCharges = 0m;
@@ -118,6 +120,51 @@ namespace BusinessLogic
                     if (reader.Read())
                         throw new InvalidOperationException("More than one checked-in reservation matched. Search using the full guest name, then resolve any duplicates.");
                     return billing;
+                }
+            }
+        }
+
+        // Billing UI: exact reservation ID search, avoiding ambiguous guest names.
+        public BillingInfo GetCheckedInBillingByReservationId(int reservationId)
+        {
+            if (reservationId <= 0)
+                throw new InvalidOperationException("Enter a valid reservation ID.");
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlCommand command = new SqlCommand(
+                @"SELECT r.ReservationId, g.GuestName, rm.RoomNumber,
+                         rm.RoomRate, r.CheckInDate, r.CheckOutDate
+                  FROM dbo.Reservations r
+                  INNER JOIN dbo.Guests g ON g.GuestId = r.GuestId
+                  INNER JOIN dbo.Rooms rm ON rm.RoomId = r.RoomId
+                  WHERE r.ReservationId = @reservationId
+                    AND r.ReservationStatus = 'Checked In'", connection))
+            {
+                command.Parameters.Add("@reservationId", SqlDbType.Int).Value = reservationId;
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (!reader.Read()) return null;
+
+                    DateTime arrival = Convert.ToDateTime(reader["CheckInDate"]);
+                    DateTime departure = Convert.ToDateTime(reader["CheckOutDate"]);
+                    decimal rate = Convert.ToDecimal(reader["RoomRate"]);
+                    int nights = Math.Max(1, (departure.Date - arrival.Date).Days);
+
+                    return new BillingInfo
+                    {
+                        ReservationId = Convert.ToInt32(reader["ReservationId"]),
+                        GuestName = Convert.ToString(reader["GuestName"]),
+                        RoomNumber = Convert.ToString(reader["RoomNumber"]),
+                        RoomRate = rate,
+                        CheckInDate = arrival,
+                        CheckOutDate = departure,
+                        StayDays = nights,
+                        RoomCharges = rate * nights,
+                        OtherCharges = 0m,
+                        TotalBill = rate * nights,
+                        ReservationStatus = "Checked In"
+                    };
                 }
             }
         }
