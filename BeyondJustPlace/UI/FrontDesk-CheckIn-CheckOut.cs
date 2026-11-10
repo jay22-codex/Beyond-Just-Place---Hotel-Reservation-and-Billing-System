@@ -36,10 +36,6 @@ namespace UI
             ClearBill();
         }
 
-        // =========================================
-        // CHECK-IN: SEARCH EXISTING RESERVATIONS
-        // =========================================
-
         private void btnSearch_Click(object sender, EventArgs e)
         {
             try
@@ -78,9 +74,6 @@ namespace UI
             }
         }
 
-        // =========================================
-        // CHECK-IN: CONFIRM SELECTED RESERVATION
-        // =========================================
 
         private void btnConfirmCheckIn_Click(
             object sender, EventArgs e)
@@ -121,9 +114,6 @@ namespace UI
             }
         }
 
-        // =========================================
-        // CHECK-OUT: SEARCH CHECKED-IN GUEST
-        // =========================================
 
         private void btnSearchCheckout_Click(
             object sender, EventArgs e)
@@ -178,9 +168,6 @@ namespace UI
             }
         }
 
-        // =========================================
-        // CHECK-OUT: OPEN BILLING AND PAYMENT
-        // =========================================
 
         private void btnCheckOut_Click(
             object sender, EventArgs e)
@@ -224,9 +211,6 @@ namespace UI
             }
         }
 
-        // =========================================
-        // CLEAR DISPLAYED CHECK-OUT DETAILS
-        // =========================================
 
         private void ClearBill()
         {

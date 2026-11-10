@@ -59,6 +59,9 @@ namespace UI
                     return;
                 }
 
+                CurrentUserSession.Username = username;
+                CurrentUserSession.Role = role;
+
                 dashboard.FormClosed += Dashboard_FormClosed;
 
                 dashboard.Show();
@@ -82,6 +85,8 @@ namespace UI
             object sender,
             FormClosedEventArgs e)
         {
+            CurrentUserSession.Clear();
+
             txtUsername.Clear();
             txtPassword.Clear();
 

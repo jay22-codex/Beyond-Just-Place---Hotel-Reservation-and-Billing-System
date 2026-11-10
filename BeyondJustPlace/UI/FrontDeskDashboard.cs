@@ -82,10 +82,8 @@ namespace UI
 
             if (button != null)
             {
-                // Prevent duplicate Check-In event handlers.
                 button.Click -= btnCheckinCheckout_Click;
 
-                // Prevent duplicate events from the Designer.
                 button.Click -= handler;
                 button.Click += handler;
             }
@@ -136,10 +134,6 @@ namespace UI
             ShowDashboard();
         }
 
-        // =====================================
-        // OPEN MDI CHILD FORM
-        // =====================================
-
         private void OpenChildForm(Form child)
         {
             foreach (Form existing in MdiChildren)
@@ -166,9 +160,6 @@ namespace UI
                 panels[0].BringToFront();
         }
 
-        // =====================================
-        // DASHBOARD
-        // =====================================
 
         public void ShowDashboard()
         {
@@ -195,9 +186,6 @@ namespace UI
             }
         }
 
-        // =====================================
-        // BILLING WITH SELECTED GUEST
-        // =====================================
 
         public void OpenBilling(BillingInfo billing)
         {
@@ -212,9 +200,6 @@ namespace UI
                 new FrontDesk_Billing_PaymentUI(billing));
         }
 
-        // =====================================
-        // SIDEBAR BUTTONS
-        // =====================================
 
         private void btnDashboard_Click(
             object sender,
@@ -239,7 +224,6 @@ namespace UI
                 new FrontDesk_CheckIn_CheckOut());
         }
 
-        // Compatibility with older Designer event names.
         private void btnCheckinCheckout_Click(
             object sender,
             EventArgs e)
@@ -247,22 +231,13 @@ namespace UI
             btnCheckInOut_Click(sender, e);
         }
 
-        // Only one btnBilling_Click method is defined.
         private void btnBilling_Click(
             object sender,
             EventArgs e)
         {
-            MessageBox.Show(
-                "To process Billing, search for a checked-in " +
-                "guest in Check-Out first.");
-
-            OpenChildForm(
-                new FrontDesk_CheckIn_CheckOut());
+            OpenChildForm(new FrontDesk_Billing_PaymentUI());
         }
 
-        // =====================================
-        // LOGOUT
-        // =====================================
 
         private void btnLogout_Click(
             object sender,
