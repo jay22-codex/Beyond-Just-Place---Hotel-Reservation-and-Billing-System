@@ -19,7 +19,7 @@ namespace BusinessLogic
                 builder.DataSource = LocalDbInstance;
                 builder.InitialCatalog = "master";
                 builder.IntegratedSecurity = true;
-                builder.ConnectTimeout = 30;
+                builder.ConnectTimeout = 30;    
                 return builder.ConnectionString;
             }
         }
