@@ -1,0 +1,10 @@
+CREATE TABLE [dbo].[Guests]
+(
+    [GuestId] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Guests] PRIMARY KEY,
+    [GuestName] NVARCHAR(255) NOT NULL,
+    [ContactNumber] NVARCHAR(50) NOT NULL,
+    [Email] NVARCHAR(254) NULL,
+    [HomeAddress] NVARCHAR(500) NULL,
+    [IdType] NVARCHAR(50) NULL,
+    [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [DF_Guests_CreatedAt] DEFAULT SYSDATETIME()
+);

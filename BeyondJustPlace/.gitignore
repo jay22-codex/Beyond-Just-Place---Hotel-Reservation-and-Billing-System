@@ -1,0 +1,28 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# SQL database/project generated files
+*.dbmdl
+*.jfm
+*.dacpac
+*.mdf
+*.ldf
+*.bak
+
+# Temporary/OS files
+*.tmp
+*.log
+Thumbs.db
+.DS_Store

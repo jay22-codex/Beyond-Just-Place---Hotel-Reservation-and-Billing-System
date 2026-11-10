@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using Model;
@@ -9,8 +8,7 @@ namespace BusinessLogic.Repository
 {
     public class ReservationRepository
     {
-        private readonly string connectionString =
-            ConfigurationManager.ConnectionStrings["HotelDB"].ConnectionString;
+        private readonly string connectionString = DatabaseConfig.ConnectionString;
 
         public List<Guest> SearchGuest(string keyword)
         {
@@ -143,6 +141,7 @@ namespace BusinessLogic.Repository
                         r.RoomStatus
                       FROM dbo.Rooms r
                       WHERE r.RoomType = @roomType
+                      AND ISNULL(r.RoomStatus, N'Available') = N'Available'
                       AND r.RoomId NOT IN
                       (
                           SELECT RoomId

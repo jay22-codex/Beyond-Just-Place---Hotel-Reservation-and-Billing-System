@@ -97,8 +97,6 @@ namespace UI
                     cmbPreferredRoomType.Items.Add(roomType);
                 }
 
-                // Placed in Search Guest Records to avoid covering
-                // the Adults/Children controls in Guest Information.
                 btnNewGuest = new Button();
                 btnNewGuest.Name = "btnNewGuest";
                 btnNewGuest.Text = "New Guest";

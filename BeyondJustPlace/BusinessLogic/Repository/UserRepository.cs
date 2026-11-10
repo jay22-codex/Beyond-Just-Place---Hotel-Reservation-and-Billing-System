@@ -1,12 +1,10 @@
-﻿using System.Configuration;
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 
 namespace BusinessLogic.Repository
 {
     public class UserRepository
     {
-        private readonly string connectionString =
-            ConfigurationManager.ConnectionStrings["HotelDB"].ConnectionString;
+        private readonly string connectionString = DatabaseConfig.ConnectionString;
 
         public string Login(string username, string password)
         {

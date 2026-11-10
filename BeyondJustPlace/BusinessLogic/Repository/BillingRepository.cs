@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.Data.SqlClient;
 using Model;
 
@@ -7,8 +6,7 @@ namespace BusinessLogic.Repository
 {
     public class BillingRepository
     {
-        private readonly string connectionString =
-            ConfigurationManager.ConnectionStrings["HotelDB"].ConnectionString;
+        private readonly string connectionString = DatabaseConfig.ConnectionString;
 
         public BillingInfo SearchGuest(string guestName)
         {
@@ -56,8 +54,9 @@ namespace BusinessLogic.Repository
                             reader["CheckOutDate"]);
 
                     int stayDays =
-                        (checkOut.Date -
-                         checkIn.Date).Days;
+                        Math.Max(1,
+                            (checkOut.Date -
+                             checkIn.Date).Days);
 
                     decimal roomRate =
                         Convert.ToDecimal(
@@ -99,6 +98,9 @@ namespace BusinessLogic.Repository
 
                     billing.ReservationStatus =
                         reader["ReservationStatus"].ToString();
+
+                    billing.CheckInDate = checkIn;
+                    billing.CheckOutDate = checkOut;
 
                     return billing;
                 }

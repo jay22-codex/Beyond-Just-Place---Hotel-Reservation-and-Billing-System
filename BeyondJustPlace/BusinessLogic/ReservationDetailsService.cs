@@ -1,7 +1,6 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using Model;
@@ -20,19 +19,10 @@ namespace BusinessLogic
 
     public class ReservationDetailsService
     {
-        private readonly string connectionString;
+        private readonly string connectionString = DatabaseConfig.ConnectionString;
 
         public ReservationDetailsService()
         {
-            ConnectionStringSettings settings =
-                ConfigurationManager.ConnectionStrings["HotelDB"];
-
-            if (settings == null ||
-                string.IsNullOrWhiteSpace(settings.ConnectionString))
-                throw new InvalidOperationException(
-                    "HotelDB is missing from UI/App.config.");
-
-            connectionString = settings.ConnectionString;
         }
 
         public Guest GetGuest(int guestId)
@@ -169,6 +159,7 @@ namespace BusinessLogic
                       rm.ReservationFee
                   FROM dbo.Rooms rm
                   WHERE rm.RoomType = @type
+                    AND ISNULL(rm.RoomStatus, N'Available') = N'Available'
                     AND NOT EXISTS
                     (
                         SELECT 1
