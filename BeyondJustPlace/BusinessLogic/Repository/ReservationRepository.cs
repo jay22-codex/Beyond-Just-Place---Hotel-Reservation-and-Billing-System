@@ -142,14 +142,34 @@ namespace BusinessLogic.Repository
                       FROM dbo.Rooms r
                       WHERE r.RoomType = @roomType
                       AND ISNULL(r.RoomStatus, N'Available') = N'Available'
-                      AND r.RoomId NOT IN
+                      AND NOT EXISTS
                       (
-                          SELECT RoomId
-                          FROM dbo.Reservations
-                          WHERE ReservationStatus IN
+                          SELECT 1
+                          FROM dbo.Reservations res
+                          WHERE res.ReservationStatus IN
                           ('Pending', 'Confirmed', 'Checked In')
-                          AND CheckInDate < @checkOut
-                          AND CheckOutDate > @checkIn
+                          AND res.CheckInDate < @checkOut
+                          AND res.CheckOutDate > @checkIn
+                          AND
+                          (
+                              EXISTS
+                              (
+                                  SELECT 1
+                                  FROM dbo.ReservationRooms rr
+                                  WHERE rr.ReservationId = res.ReservationId
+                                    AND rr.RoomId = r.RoomId
+                              )
+                              OR
+                              (
+                                  NOT EXISTS
+                                  (
+                                      SELECT 1
+                                      FROM dbo.ReservationRooms rr2
+                                      WHERE rr2.ReservationId = res.ReservationId
+                                  )
+                                  AND res.RoomId = r.RoomId
+                              )
+                          )
                       )
                       ORDER BY r.RoomNumber";
 
@@ -206,55 +226,76 @@ namespace BusinessLogic.Repository
             DateTime checkOut,
             string status)
         {
-            using (SqlConnection connection =
-                new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        int reservationId;
+                        decimal rate;
+                        decimal? fee;
 
-                string query =
-                    @"INSERT INTO dbo.Reservations
-                      (
-                          GuestId,
-                          RoomId,
-                          CheckInDate,
-                          CheckOutDate,
-                          ReservationStatus
-                      )
-                      OUTPUT INSERTED.ReservationId
-                      VALUES
-                      (
-                          @guestId,
-                          @roomId,
-                          @checkIn,
-                          @checkOut,
-                          @status
-                      )";
+                        using (SqlCommand room = new SqlCommand(
+                            @"SELECT RoomRate, ReservationFee
+                              FROM dbo.Rooms
+                              WHERE RoomId=@roomId", connection, transaction))
+                        {
+                            room.Parameters.Add("@roomId", SqlDbType.Int).Value = roomId;
+                            using (SqlDataReader reader = room.ExecuteReader())
+                            {
+                                if (!reader.Read())
+                                    throw new InvalidOperationException("Room was not found.");
+                                rate = Convert.ToDecimal(reader["RoomRate"]);
+                                fee = reader["ReservationFee"] == DBNull.Value
+                                    ? (decimal?)null
+                                    : Convert.ToDecimal(reader["ReservationFee"]);
+                            }
+                        }
 
-                SqlCommand command =
-                    new SqlCommand(query, connection);
+                        using (SqlCommand command = new SqlCommand(
+                            @"INSERT INTO dbo.Reservations
+                              (GuestId, RoomId, CheckInDate, CheckOutDate,
+                               ReservationStatus, RoomCount)
+                              OUTPUT INSERTED.ReservationId
+                              VALUES
+                              (@guestId, @roomId, @checkIn, @checkOut, @status, 1)",
+                            connection, transaction))
+                        {
+                            command.Parameters.Add("@guestId", SqlDbType.Int).Value = guestId;
+                            command.Parameters.Add("@roomId", SqlDbType.Int).Value = roomId;
+                            command.Parameters.Add("@checkIn", SqlDbType.Date).Value = checkIn.Date;
+                            command.Parameters.Add("@checkOut", SqlDbType.Date).Value = checkOut.Date;
+                            command.Parameters.Add("@status", SqlDbType.NVarChar, 30).Value = status;
+                            reservationId = Convert.ToInt32(command.ExecuteScalar());
+                        }
 
-                command.Parameters.AddWithValue(
-                    "@guestId",
-                    guestId);
+                        using (SqlCommand child = new SqlCommand(
+                            @"INSERT INTO dbo.ReservationRooms
+                              (ReservationId, RoomId, RoomRateSnapshot, ReservationFeeSnapshot)
+                              VALUES (@reservationId, @roomId, @rate, @fee)",
+                            connection, transaction))
+                        {
+                            child.Parameters.Add("@reservationId", SqlDbType.Int).Value = reservationId;
+                            child.Parameters.Add("@roomId", SqlDbType.Int).Value = roomId;
+                            SqlParameter rp = child.Parameters.Add("@rate", SqlDbType.Decimal);
+                            rp.Precision = 18; rp.Scale = 2; rp.Value = rate;
+                            SqlParameter fp = child.Parameters.Add("@fee", SqlDbType.Decimal);
+                            fp.Precision = 18; fp.Scale = 2;
+                            fp.Value = fee.HasValue ? (object)fee.Value : DBNull.Value;
+                            child.ExecuteNonQuery();
+                        }
 
-                command.Parameters.AddWithValue(
-                    "@roomId",
-                    roomId);
-
-                command.Parameters.AddWithValue(
-                    "@checkIn",
-                    checkIn.Date);
-
-                command.Parameters.AddWithValue(
-                    "@checkOut",
-                    checkOut.Date);
-
-                command.Parameters.AddWithValue(
-                    "@status",
-                    status);
-
-                return Convert.ToInt32(
-                    command.ExecuteScalar());
+                        transaction.Commit();
+                        return reservationId;
+                    }
+                    catch
+                    {
+                        try { transaction.Rollback(); } catch { }
+                        throw;
+                    }
+                }
             }
         }
 
@@ -304,7 +345,15 @@ namespace BusinessLogic.Repository
                     @"SELECT
                         r.ReservationId,
                         g.GuestName,
-                        rm.RoomNumber,
+                        COALESCE(NULLIF(
+                            STUFF((
+                                SELECT N', ' + rm2.RoomNumber
+                                FROM dbo.ReservationRooms rr2
+                                INNER JOIN dbo.Rooms rm2 ON rm2.RoomId = rr2.RoomId
+                                WHERE rr2.ReservationId = r.ReservationId
+                                ORDER BY rm2.RoomNumber
+                                FOR XML PATH(''), TYPE
+                            ).value('.', 'nvarchar(max)'), 1, 2, N''), N''), rm.RoomNumber) AS RoomNumber,
                         r.CheckInDate,
                         r.ReservationStatus
                       FROM dbo.Reservations r
@@ -457,7 +506,15 @@ namespace BusinessLogic.Repository
                     @"SELECT TOP 10
                         r.ReservationId,
                         g.GuestName,
-                        rm.RoomNumber,
+                        COALESCE(NULLIF(
+                            STUFF((
+                                SELECT N', ' + rm2.RoomNumber
+                                FROM dbo.ReservationRooms rr2
+                                INNER JOIN dbo.Rooms rm2 ON rm2.RoomId = rr2.RoomId
+                                WHERE rr2.ReservationId = r.ReservationId
+                                ORDER BY rm2.RoomNumber
+                                FOR XML PATH(''), TYPE
+                            ).value('.', 'nvarchar(max)'), 1, 2, N''), N''), rm.RoomNumber) AS RoomNumber,
                         r.ReservationStatus
                       FROM dbo.Reservations r
                       INNER JOIN dbo.Guests g

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Net.Mail;
 using System.Windows.Forms;
 using BusinessLogic;
@@ -15,7 +17,9 @@ namespace UI
         private ReservationDetailsService details;
 
         private Guest selectedGuest;
-        private AvailableRoomInfo selectedRoom;
+        private readonly List<AvailableRoomInfo> selectedRooms =
+            new List<AvailableRoomInfo>();
+
         private Button btnNewGuest;
 
         public FrontDesk_ReservationUI()
@@ -37,21 +41,26 @@ namespace UI
             btnCancelReservation.Click += CancelReservation_Click;
 
             cmbPreferredRoomType.SelectedIndexChanged += PreferredRoomTypeChanged;
-            cmbRoomType.SelectedIndexChanged += (s, e) => ClearRoom();
-            dtpCheckIn.ValueChanged += (s, e) => ClearRoom();
-            dtpCheckOut.ValueChanged += (s, e) => ClearRoom();
+            cmbRoomType.SelectedIndexChanged += RoomTypeChanged;
+            dtpCheckIn.ValueChanged += DatesChanged;
+            dtpCheckOut.ValueChanged += DatesChanged;
+            nudRoomCount.SelectedIndexChanged += RoomCountChanged;
             txtGuestName.TextChanged += (s, e) => UpdateSummary();
 
             dgvAvailableRooms.AllowUserToAddRows = false;
             dgvAvailableRooms.AllowUserToDeleteRows = false;
-            dgvAvailableRooms.MultiSelect = false;
+            dgvAvailableRooms.MultiSelect = true;
             dgvAvailableRooms.ReadOnly = true;
             dgvAvailableRooms.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvAvailableRooms.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvAvailableRooms.CellDoubleClick += (s, e) =>
             {
                 if (e.RowIndex >= 0)
+                {
+                    dgvAvailableRooms.ClearSelection();
+                    dgvAvailableRooms.Rows[e.RowIndex].Selected = true;
                     SelectRoom();
+                }
             };
         }
 
@@ -68,10 +77,10 @@ namespace UI
                 dtpCheckIn.Value = DateTime.Today;
                 dtpCheckOut.Value = DateTime.Today.AddDays(1);
 
-                FillCount(nudGuestCount, 1, 20, 1);
+                FillCount(nudGuestCount, 1, 50, 1);
                 FillCount(nudRoomCount, 1, 10, 1);
-                FillCount(nudAdults, 1, 20, 1);
-                FillCount(nudChildren, 0, 20, 0);
+                FillCount(nudAdults, 1, 50, 1);
+                FillCount(nudChildren, 0, 50, 0);
 
                 if (cmbIdType.Items.Count == 0)
                 {
@@ -97,6 +106,19 @@ namespace UI
                     cmbPreferredRoomType.Items.Add(roomType);
                 }
 
+                pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+                pictureBox1.BorderStyle = BorderStyle.FixedSingle;
+                pictureBox1.BackColor = Color.White;
+                UpdateRoomPreview(null);
+
+                btnSelectRoom.Text = "Add Room(s)";
+                btnSelectPreferredRoom.Text = "View Rooms";
+
+                // Reuse the existing hidden Designer button as Clear Selected.
+                button1.Visible = true;
+                button1.Text = "Clear Selected";
+                button1.Click += (s, args) => ClearSelectedRooms(true);
+
                 btnNewGuest = new Button();
                 btnNewGuest.Name = "btnNewGuest";
                 btnNewGuest.Text = "New Guest";
@@ -110,6 +132,7 @@ namespace UI
                 groupBox3.Controls.Add(btnNewGuest);
 
                 LoadGuests();
+                UpdateSelectionInstruction();
                 UpdateSummary();
             }
             catch (Exception ex)
@@ -211,7 +234,8 @@ namespace UI
                 if (editing)
                 {
                     txtGuestName.Focus();
-                    MessageBox.Show("Edit the guest details, then click Update Guest Record.");
+                    MessageBox.Show(
+                        "Edit the guest details, then click Update Guest Record.");
                 }
             }
             catch (Exception ex)
@@ -246,12 +270,14 @@ namespace UI
                     try { parsed = new MailAddress(email); }
                     catch (FormatException)
                     {
-                        throw new InvalidOperationException("Enter a valid email address.");
+                        throw new InvalidOperationException(
+                            "Enter a valid email address.");
                     }
 
                     if (!string.Equals(parsed.Address, email,
                         StringComparison.OrdinalIgnoreCase))
-                        throw new InvalidOperationException("Enter a valid email address.");
+                        throw new InvalidOperationException(
+                            "Enter a valid email address.");
                 }
 
                 Guest guest = new Guest
@@ -295,7 +321,49 @@ namespace UI
         private void PreferredRoomTypeChanged(object sender, EventArgs e)
         {
             if (cmbPreferredRoomType.SelectedIndex >= 0)
+            {
                 cmbRoomType.SelectedItem = cmbPreferredRoomType.SelectedItem;
+                UpdateRoomPreview(cmbPreferredRoomType.Text);
+            }
+            else
+            {
+                UpdateRoomPreview(null);
+            }
+        }
+
+        private void RoomTypeChanged(object sender, EventArgs e)
+        {
+            dgvAvailableRooms.Rows.Clear();
+
+            if (cmbRoomType.SelectedIndex >= 0)
+            {
+                if (cmbPreferredRoomType.Items.Contains(cmbRoomType.Text))
+                    cmbPreferredRoomType.SelectedItem = cmbRoomType.Text;
+
+                UpdateRoomPreview(cmbRoomType.Text);
+            }
+
+            UpdateSelectionInstruction();
+        }
+
+        private void DatesChanged(object sender, EventArgs e)
+        {
+            ClearSelectedRooms(false);
+            dgvAvailableRooms.Rows.Clear();
+            UpdateSummary();
+        }
+
+        private void RoomCountChanged(object sender, EventArgs e)
+        {
+            int desired;
+            if (int.TryParse(nudRoomCount.Text, out desired) &&
+                selectedRooms.Count > desired)
+            {
+                ClearSelectedRooms(false);
+            }
+
+            UpdateSelectionInstruction();
+            UpdateSummary();
         }
 
         private void PreferredRoom_Click(object sender, EventArgs e)
@@ -332,14 +400,17 @@ namespace UI
                     "Check-out date must be after check-in date.");
 
             List<AvailableRoomInfo> rooms = details.GetAvailableRooms(
-                dtpCheckIn.Value.Date, dtpCheckOut.Value.Date,
+                dtpCheckIn.Value.Date,
+                dtpCheckOut.Value.Date,
                 cmbRoomType.Text);
 
-            selectedRoom = null;
             dgvAvailableRooms.Rows.Clear();
 
             foreach (AvailableRoomInfo room in rooms)
             {
+                bool alreadySelected = selectedRooms.Any(
+                    selected => selected.RoomId == room.RoomId);
+
                 int rowIndex = dgvAvailableRooms.Rows.Add(
                     room.RoomNumber,
                     room.RoomType,
@@ -348,16 +419,34 @@ namespace UI
                     room.ReservationFee.HasValue
                         ? "PHP " + room.ReservationFee.Value.ToString("N2") : "Not set",
                     room.RoomRate.ToString("N2"),
-                    "Available");
+                    alreadySelected ? "Selected" : "Available");
 
                 dgvAvailableRooms.Rows[rowIndex].Tag = room;
+
+                if (alreadySelected)
+                    dgvAvailableRooms.Rows[rowIndex].DefaultCellStyle.BackColor =
+                        Color.FromArgb(224, 224, 224);
             }
 
             dgvAvailableRooms.ClearSelection();
+            UpdateSelectionInstruction();
             UpdateSummary();
 
+            int desiredRooms = ReadCount(nudRoomCount, "Rooms");
+            int remaining = Math.Max(0, desiredRooms - selectedRooms.Count);
+
             if (rooms.Count == 0)
+            {
                 MessageBox.Show("No available rooms for the selected dates.");
+            }
+            else if (remaining > 0 && rooms.Count < remaining)
+            {
+                MessageBox.Show(
+                    "Only " + rooms.Count + " " + cmbRoomType.Text +
+                    " room(s) are currently available.\n\n" +
+                    "You may select these, then choose another room type " +
+                    "to complete the reservation.");
+            }
         }
 
         private void SelectRoom_Click(object sender, EventArgs e)
@@ -367,22 +456,109 @@ namespace UI
 
         private void SelectRoom()
         {
-            if (dgvAvailableRooms.SelectedRows.Count != 1 ||
-                !(dgvAvailableRooms.SelectedRows[0].Tag is AvailableRoomInfo))
+            if (dgvAvailableRooms.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Select an available room from the table first.");
+                MessageBox.Show(
+                    "Select one or more available rooms from the table first.\n" +
+                    "Tip: hold Ctrl to select several rows.");
                 return;
             }
 
-            selectedRoom = (AvailableRoomInfo)dgvAvailableRooms.SelectedRows[0].Tag;
+            int desired = ReadCount(nudRoomCount, "Rooms");
+            int remaining = desired - selectedRooms.Count;
+
+            if (remaining <= 0)
+            {
+                MessageBox.Show(
+                    "You already selected the requested " + desired + " room(s).\n" +
+                    "Use Clear Selected if you want to choose different rooms.");
+                return;
+            }
+
+            List<AvailableRoomInfo> additions = new List<AvailableRoomInfo>();
+
+            foreach (DataGridViewRow row in dgvAvailableRooms.SelectedRows)
+            {
+                AvailableRoomInfo room = row.Tag as AvailableRoomInfo;
+                if (room == null) continue;
+
+                if (selectedRooms.Any(r => r.RoomId == room.RoomId))
+                    continue;
+
+                additions.Add(room);
+            }
+
+            if (additions.Count == 0)
+            {
+                MessageBox.Show("The selected room(s) are already added.");
+                return;
+            }
+
+            if (additions.Count > remaining)
+            {
+                MessageBox.Show(
+                    "You only need " + remaining + " more room(s). " +
+                    "Select only that many rows.");
+                return;
+            }
+
+            selectedRooms.AddRange(additions);
+
+            foreach (DataGridViewRow row in dgvAvailableRooms.Rows)
+            {
+                AvailableRoomInfo room = row.Tag as AvailableRoomInfo;
+                if (room != null && selectedRooms.Any(r => r.RoomId == room.RoomId))
+                {
+                    row.Cells[colRoomStatus.Index].Value = "Selected";
+                    row.DefaultCellStyle.BackColor = Color.FromArgb(224, 224, 224);
+                }
+            }
+
+            dgvAvailableRooms.ClearSelection();
+            UpdateSelectionInstruction();
             UpdateSummary();
+
+            if (selectedRooms.Count == desired)
+            {
+                MessageBox.Show(
+                    "All " + desired + " room(s) selected:\n" +
+                    string.Join(", ", selectedRooms.Select(r => r.RoomNumber).ToArray()));
+            }
+            else
+            {
+                MessageBox.Show(
+                    "Selected " + selectedRooms.Count + " of " + desired + " room(s).\n" +
+                    "You can select more rooms or switch room type and add another room.");
+            }
         }
 
-        private void ClearRoom()
+        private void ClearSelectedRooms(bool showMessage)
         {
-            selectedRoom = null;
-            dgvAvailableRooms.Rows.Clear();
+            selectedRooms.Clear();
+
+            foreach (DataGridViewRow row in dgvAvailableRooms.Rows)
+            {
+                row.DefaultCellStyle.BackColor = dgvAvailableRooms.DefaultCellStyle.BackColor;
+                row.Cells[colRoomStatus.Index].Value = "Available";
+            }
+
+            dgvAvailableRooms.ClearSelection();
+            UpdateSelectionInstruction();
             UpdateSummary();
+
+            if (showMessage)
+                MessageBox.Show("Selected rooms cleared.");
+        }
+
+        private void UpdateSelectionInstruction()
+        {
+            int desired = 1;
+            int.TryParse(nudRoomCount.Text, out desired);
+            if (desired < 1) desired = 1;
+
+            label11.Text =
+                "Available Room(s): Select " + desired +
+                " total — currently " + selectedRooms.Count + " selected";
         }
 
         private void UpdateSummary()
@@ -393,18 +569,27 @@ namespace UI
             int nights = (dtpCheckOut.Value.Date - dtpCheckIn.Value.Date).Days;
             lblSummaryStay.Text = nights > 0 ? nights + " night(s)" : "Output";
 
-            lblSummaryRoom.Text = selectedRoom == null
-                ? "Output" : selectedRoom.RoomNumber;
+            if (selectedRooms.Count == 0)
+            {
+                lblSummaryRoom.Text = "Output";
+                lblSummaryRate.Text = "Output";
+                lblSummaryReservationFee.Text = "Output";
+                lblReservationFeePreview.Text = "Select room(s)";
+                return;
+            }
 
-            lblSummaryRate.Text = selectedRoom == null
-                ? "Output"
-                : "PHP " + selectedRoom.RoomRate.ToString("N2") + "/night";
+            lblSummaryRoom.Text = string.Join(", ",
+                selectedRooms.Select(r => r.RoomNumber).ToArray());
 
-            string fee = selectedRoom == null
-                ? "Output"
-                : selectedRoom.ReservationFee.HasValue
-                    ? "PHP " + selectedRoom.ReservationFee.Value.ToString("N2")
-                    : "Not configured";
+            decimal totalNightlyRate = selectedRooms.Sum(r => r.RoomRate);
+            lblSummaryRate.Text =
+                "PHP " + totalNightlyRate.ToString("N2") + "/night total";
+
+            decimal totalFee = selectedRooms.Sum(
+                r => r.ReservationFee.GetValueOrDefault());
+
+            string fee = "PHP " + totalFee.ToString("N2") +
+                         " (" + selectedRooms.Count + " room(s))";
 
             lblSummaryReservationFee.Text = fee;
             lblReservationFeePreview.Text = fee;
@@ -422,10 +607,6 @@ namespace UI
                     throw new InvalidOperationException(
                         "Guest details changed. Click Update Guest Record first.");
 
-                if (selectedRoom == null)
-                    throw new InvalidOperationException(
-                        "Select an available room first.");
-
                 int totalGuests = ReadCount(nudGuestCount, "Number of Guests");
                 int adults = ReadCount(nudAdults, "Adults");
                 int children = ReadCount(nudChildren, "Children");
@@ -435,24 +616,37 @@ namespace UI
                     throw new InvalidOperationException(
                         "Number of Guests must equal Adults + Children.");
 
-                if (roomCount != 1)
+                if (selectedRooms.Count != roomCount)
                     throw new InvalidOperationException(
-                        "Only one room per reservation is supported. Set Rooms to 1.");
+                        "You requested " + roomCount + " room(s), but selected " +
+                        selectedRooms.Count + ". Select exactly " + roomCount + " room(s).");
 
-                if (selectedRoom.RoomCapacity.HasValue &&
-                    totalGuests > selectedRoom.RoomCapacity.Value)
-                    throw new InvalidOperationException(
-                        "Guest count exceeds the selected room capacity.");
+                bool allCapacitiesKnown = selectedRooms.All(
+                    r => r.RoomCapacity.HasValue);
+
+                if (allCapacitiesKnown)
+                {
+                    int totalCapacity = selectedRooms.Sum(
+                        r => r.RoomCapacity.GetValueOrDefault());
+
+                    if (totalGuests > totalCapacity)
+                        throw new InvalidOperationException(
+                            "The selected rooms can hold only " + totalCapacity +
+                            " guest(s). Add more rooms or choose larger rooms.");
+                }
+
+                decimal totalReservationFee = selectedRooms.Sum(
+                    r => r.ReservationFee.GetValueOrDefault());
 
                 string paymentMethod = cmbReservationFeeMethod.Text;
-                if (selectedRoom.ReservationFee.GetValueOrDefault() > 0 &&
+                if (totalReservationFee > 0m &&
                     string.IsNullOrWhiteSpace(paymentMethod))
                     throw new InvalidOperationException(
                         "Choose a reservation fee payment method.");
 
                 int reservationId = details.CreateReservation(
                     selectedGuest.GuestId,
-                    selectedRoom,
+                    selectedRooms,
                     dtpCheckIn.Value.Date,
                     dtpCheckOut.Value.Date,
                     totalGuests,
@@ -465,9 +659,16 @@ namespace UI
                 MessageBox.Show(
                     "Reservation #" + reservationId +
                     " saved successfully as Pending.\n\n" +
-                    "Payment method recorded; no actual payment was processed.");
+                    "Rooms: " +
+                    string.Join(", ", selectedRooms.Select(r => r.RoomNumber).ToArray()) +
+                    "\nTotal rooms: " + roomCount +
+                    "\nTotal nightly room rate: PHP " +
+                    selectedRooms.Sum(r => r.RoomRate).ToString("N2") +
+                    "\nReservation fee: PHP " + totalReservationFee.ToString("N2") +
+                    "\n\nPayment method recorded; no actual reservation-fee payment was processed.");
 
-                ClearRoom();
+                ClearSelectedRooms(false);
+                dgvAvailableRooms.Rows.Clear();
             }
             catch (Exception ex)
             {
@@ -501,7 +702,7 @@ namespace UI
                     : "No active reservation found.");
 
                 if (cancelled)
-                    ClearRoom();
+                    ClearSelectedRooms(false);
             }
             catch (Exception ex)
             {
@@ -509,10 +710,62 @@ namespace UI
             }
         }
 
+        // Uses the four actual room photos embedded in the UI assembly.
+        // The Reservation Designer/layout is intentionally left unchanged.
+        private void UpdateRoomPreview(string roomType)
+        {
+            string resourceName = GetRoomPreviewResourceName(roomType);
+
+            Image nextImage = LoadEmbeddedRoomImage(resourceName);
+
+            Image oldImage = pictureBox1.Image;
+            pictureBox1.Image = nextImage;
+            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+
+            if (oldImage != null)
+                oldImage.Dispose();
+        }
+
+        private static string GetRoomPreviewResourceName(string roomType)
+        {
+            string type = (roomType ?? "").Trim().ToLowerInvariant();
+
+            if (type.Contains("suite"))
+                return "UI.RoomImages.SuiteRoom.png";
+
+            if (type.Contains("family"))
+                return "UI.RoomImages.FamilyRoom.png";
+
+            if (type.Contains("deluxe"))
+                return "UI.RoomImages.DeluxeRoom.png";
+
+            // Show the Standard room as the default preview when no type
+            // has been selected yet.
+            return "UI.RoomImages.StandardRoom.png";
+        }
+
+        private static Image LoadEmbeddedRoomImage(string resourceName)
+        {
+            using (Stream stream = typeof(FrontDesk_ReservationUI)
+                .Assembly
+                .GetManifestResourceStream(resourceName))
+            {
+                if (stream == null)
+                    return null;
+
+                // Clone the image before closing the resource stream.
+                using (Image source = Image.FromStream(stream))
+                    return new Bitmap(source);
+            }
+        }
+
         private static void ShowError(Exception ex)
         {
-            MessageBox.Show(ex.Message, "Reservation Error",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(
+                ex.Message,
+                "Reservation Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
     }
 }

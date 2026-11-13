@@ -37,7 +37,15 @@ namespace BusinessLogic
 SELECT TOP 15
     r.ReservationId AS [Reservation ID],
     g.GuestName AS [Guest],
-    rm.RoomNumber AS [Room],
+    COALESCE(NULLIF(
+        STUFF((
+            SELECT N', ' + rm2.RoomNumber
+            FROM dbo.ReservationRooms rr2
+            INNER JOIN dbo.Rooms rm2 ON rm2.RoomId = rr2.RoomId
+            WHERE rr2.ReservationId = r.ReservationId
+            ORDER BY rm2.RoomNumber
+            FOR XML PATH(''), TYPE
+        ).value('.', 'nvarchar(max)'), 1, 2, N''), N''), rm.RoomNumber) AS [Room],
     r.ReservationStatus AS [Status]
 FROM dbo.Reservations r
 INNER JOIN dbo.Guests g ON g.GuestId = r.GuestId
@@ -107,7 +115,12 @@ WHERE RoomId=@id", connection))
             {
                 connection.Open();
                 using (SqlCommand check = new SqlCommand(
-                    "SELECT COUNT(*) FROM dbo.Reservations WHERE RoomId=@id", connection))
+                    @"SELECT COUNT(*)
+                      FROM dbo.Reservations r
+                      WHERE r.RoomId=@id
+                         OR EXISTS
+                            (SELECT 1 FROM dbo.ReservationRooms rr
+                             WHERE rr.ReservationId=r.ReservationId AND rr.RoomId=@id)", connection))
                 {
                     check.Parameters.Add("@id", SqlDbType.Int).Value = roomId;
                     if (Convert.ToInt32(check.ExecuteScalar()) > 0)
@@ -210,7 +223,18 @@ FROM dbo.Users WHERE UserId=@id", connection))
             {
                 connection.Open();
                 return FillTable(connection, @"
-SELECT r.ReservationId, g.GuestName, rm.RoomNumber, rm.RoomType,
+SELECT r.ReservationId,
+       g.GuestName,
+       COALESCE(NULLIF(
+          STUFF((
+              SELECT N', ' + rm2.RoomNumber
+              FROM dbo.ReservationRooms rr2
+              INNER JOIN dbo.Rooms rm2 ON rm2.RoomId = rr2.RoomId
+              WHERE rr2.ReservationId = r.ReservationId
+              ORDER BY rm2.RoomNumber
+              FOR XML PATH(''), TYPE
+          ).value('.', 'nvarchar(max)'), 1, 2, N''), N''), rm.RoomNumber) AS RoomNumber,
+       r.RoomCount,
        r.CheckInDate, r.CheckOutDate, r.ReservationStatus,
        r.NumberOfGuests, r.Adults, r.Children, r.SpecialRequest
 FROM dbo.Reservations r
@@ -226,7 +250,16 @@ ORDER BY r.ReservationId DESC");
             {
                 connection.Open();
                 return FillTable(connection, @"
-SELECT p.PaymentId, p.ReservationId, g.GuestName, rm.RoomNumber,
+SELECT p.PaymentId, p.ReservationId, g.GuestName,
+       COALESCE(NULLIF(
+          STUFF((
+              SELECT N', ' + rm2.RoomNumber
+              FROM dbo.ReservationRooms rr2
+              INNER JOIN dbo.Rooms rm2 ON rm2.RoomId = rr2.RoomId
+              WHERE rr2.ReservationId = r.ReservationId
+              ORDER BY rm2.RoomNumber
+              FOR XML PATH(''), TYPE
+          ).value('.', 'nvarchar(max)'), 1, 2, N''), N''), rm.RoomNumber) AS RoomNumber,
        p.PaymentAmount, p.PaymentMethod, p.PaymentStatus, p.PaymentDate
 FROM dbo.Payments p
 INNER JOIN dbo.Reservations r ON r.ReservationId=p.ReservationId

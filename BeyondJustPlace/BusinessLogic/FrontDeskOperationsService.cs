@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using Model;
 
 namespace BusinessLogic
@@ -15,8 +17,19 @@ namespace BusinessLogic
 
             using (SqlConnection connection = new SqlConnection(connectionString))
             using (SqlCommand command = new SqlCommand(
-                @"SELECT r.ReservationId, g.GuestName, rm.RoomNumber,
-                         r.CheckInDate, r.ReservationStatus
+                @"SELECT r.ReservationId,
+                         g.GuestName,
+                         COALESCE(NULLIF(
+                            STUFF((
+                                SELECT N', ' + rm2.RoomNumber
+                                FROM dbo.ReservationRooms rr2
+                                INNER JOIN dbo.Rooms rm2 ON rm2.RoomId = rr2.RoomId
+                                WHERE rr2.ReservationId = r.ReservationId
+                                ORDER BY rm2.RoomNumber
+                                FOR XML PATH(''), TYPE
+                            ).value('.', 'nvarchar(max)'), 1, 2, N''), N''), rm.RoomNumber) AS RoomNumber,
+                         r.CheckInDate,
+                         r.ReservationStatus
                   FROM dbo.Reservations r
                   INNER JOIN dbo.Guests g ON g.GuestId = r.GuestId
                   INNER JOIN dbo.Rooms rm ON rm.RoomId = r.RoomId
@@ -44,21 +57,15 @@ namespace BusinessLogic
                     AND ReservationStatus IN ('Pending','Confirmed')", connection))
             {
                 command.Parameters.Add("@reservationId", SqlDbType.Int).Value = reservationId;
-
                 connection.Open();
-
                 return command.ExecuteNonQuery() == 1;
             }
         }
 
-        public DataTable GetAvailableRooms(
-            DateTime checkIn,
-            DateTime checkOut,
-            string roomType)
+        public DataTable GetAvailableRooms(DateTime checkIn, DateTime checkOut, string roomType)
         {
             if (checkOut.Date <= checkIn.Date)
-                throw new InvalidOperationException(
-                    "Check-out must be later than check-in.");
+                throw new InvalidOperationException("Check-out must be later than check-in.");
 
             DataTable table = new DataTable();
 
@@ -69,23 +76,40 @@ namespace BusinessLogic
                   FROM dbo.Rooms rm
                   WHERE rm.RoomType = @roomType
                     AND ISNULL(rm.RoomStatus, N'Available') = N'Available'
-                    AND NOT EXISTS (
-                       SELECT 1
-                       FROM dbo.Reservations r
-                       WHERE r.RoomId = rm.RoomId
-                         AND r.ReservationStatus IN ('Pending','Confirmed','Checked In')
-                         AND r.CheckInDate < @checkOut
-                         AND r.CheckOutDate > @checkIn)
+                    AND NOT EXISTS
+                    (
+                        SELECT 1
+                        FROM dbo.Reservations r
+                        WHERE r.ReservationStatus IN ('Pending','Confirmed','Checked In')
+                          AND r.CheckInDate < @checkOut
+                          AND r.CheckOutDate > @checkIn
+                          AND
+                          (
+                              EXISTS
+                              (
+                                  SELECT 1
+                                  FROM dbo.ReservationRooms rr
+                                  WHERE rr.ReservationId = r.ReservationId
+                                    AND rr.RoomId = rm.RoomId
+                              )
+                              OR
+                              (
+                                  NOT EXISTS
+                                  (
+                                      SELECT 1
+                                      FROM dbo.ReservationRooms rr2
+                                      WHERE rr2.ReservationId = r.ReservationId
+                                  )
+                                  AND r.RoomId = rm.RoomId
+                              )
+                          )
+                    )
                   ORDER BY rm.RoomNumber", connection))
             {
                 command.Parameters.Add("@roomType", SqlDbType.NVarChar, 100).Value =
                     (roomType ?? "").Trim();
-
-                command.Parameters.Add("@checkIn", SqlDbType.Date).Value =
-                    checkIn.Date;
-
-                command.Parameters.Add("@checkOut", SqlDbType.Date).Value =
-                    checkOut.Date;
+                command.Parameters.Add("@checkIn", SqlDbType.Date).Value = checkIn.Date;
+                command.Parameters.Add("@checkOut", SqlDbType.Date).Value = checkOut.Date;
 
                 using (SqlDataAdapter adapter = new SqlDataAdapter(command))
                     adapter.Fill(table);
@@ -98,82 +122,54 @@ namespace BusinessLogic
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             using (SqlCommand command = new SqlCommand(
-                BillingSelectSql +
-                @" WHERE g.GuestName LIKE @guestName
-                     AND r.ReservationStatus = 'Checked In'
-                   ORDER BY r.ReservationId DESC", connection))
+                @"SELECT TOP 2 r.ReservationId
+                  FROM dbo.Reservations r
+                  INNER JOIN dbo.Guests g ON g.GuestId = r.GuestId
+                  WHERE g.GuestName LIKE @guestName
+                    AND r.ReservationStatus = 'Checked In'
+                  ORDER BY r.ReservationId DESC", connection))
             {
                 command.Parameters.Add("@guestName", SqlDbType.NVarChar, 255).Value =
                     "%" + (keyword ?? "").Trim() + "%";
-
                 connection.Open();
 
+                List<int> ids = new List<int>();
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
-                    if (!reader.Read())
-                        return null;
-
-                    BillingInfo billing = ReadBilling(reader);
-
-                    if (reader.Read())
-                    {
-                        throw new InvalidOperationException(
-                            "More than one checked-in reservation matched. " +
-                            "Search using the full guest name or reservation ID.");
-                    }
-
-                    return billing;
+                    while (reader.Read())
+                        ids.Add(Convert.ToInt32(reader["ReservationId"]));
                 }
+
+                if (ids.Count == 0) return null;
+                if (ids.Count > 1)
+                    throw new InvalidOperationException(
+                        "More than one checked-in reservation matched. " +
+                        "Search using the full guest name or reservation ID.");
+
+                return LoadBilling(connection, ids[0]);
             }
         }
 
-        // Exact reservation-ID search for Billing.
         public BillingInfo GetCheckedInBillingByReservationId(int reservationId)
         {
             if (reservationId <= 0)
-                throw new InvalidOperationException(
-                    "Enter a valid reservation ID.");
+                throw new InvalidOperationException("Enter a valid reservation ID.");
 
             using (SqlConnection connection = new SqlConnection(connectionString))
-            using (SqlCommand command = new SqlCommand(
-                BillingSelectSql +
-                @" WHERE r.ReservationId = @reservationId
-                     AND r.ReservationStatus = 'Checked In'", connection))
             {
-                command.Parameters.Add("@reservationId", SqlDbType.Int).Value =
-                    reservationId;
-
                 connection.Open();
-
-                using (SqlDataReader reader = command.ExecuteReader())
-                {
-                    if (!reader.Read())
-                        return null;
-
-                    return ReadBilling(reader);
-                }
+                return LoadBilling(connection, reservationId);
             }
         }
 
-        // Compatibility overload for older Billing code.
-        // It treats the total bill as the amount received.
-        public void CompleteCheckout(
-            BillingInfo billing,
-            string method)
+        public void CompleteCheckout(BillingInfo billing, string method)
         {
             if (billing == null)
-                throw new InvalidOperationException(
-                    "Select a checked-in guest first.");
+                throw new InvalidOperationException("Select a checked-in guest first.");
 
-            CompleteCheckout(
-                billing,
-                method,
-                billing.TotalBill,
-                "Front Desk");
+            CompleteCheckout(billing, method, billing.TotalBill, "Front Desk");
         }
 
-        // Saves payment and changes reservation to Checked Out
-        // in one SQL transaction.
         public PaymentReceiptInfo CompleteCheckout(
             BillingInfo billing,
             string method,
@@ -181,198 +177,116 @@ namespace BusinessLogic
             string processedBy)
         {
             if (billing == null)
-                throw new InvalidOperationException(
-                    "Select a checked-in guest first.");
+                throw new InvalidOperationException("Select a checked-in guest first.");
 
-            if (method != "Cash" &&
-                method != "GCash" &&
-                method != "Card")
-            {
-                throw new InvalidOperationException(
-                    "Select Cash, GCash, or Card.");
-            }
+            if (method != "Cash" && method != "GCash" && method != "Card")
+                throw new InvalidOperationException("Select Cash, GCash, or Card.");
 
             if (amountReceived < billing.TotalBill)
-            {
                 throw new InvalidOperationException(
                     "Amount received must cover the total bill.");
-            }
 
-            decimal changeAmount =
-                method == "Cash"
-                    ? Math.Max(0m, amountReceived - billing.TotalBill)
-                    : 0m;
+            decimal changeAmount = method == "Cash"
+                ? Math.Max(0m, amountReceived - billing.TotalBill)
+                : 0m;
 
-            using (SqlConnection connection =
-                new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
 
                 using (SqlTransaction transaction =
-                    connection.BeginTransaction(
-                        IsolationLevel.Serializable))
+                    connection.BeginTransaction(IsolationLevel.Serializable))
                 {
                     try
                     {
                         decimal total;
 
                         using (SqlCommand read = new SqlCommand(
-                            @"SELECT rm.RoomRate,
-                                     r.CheckInDate,
-                                     r.CheckOutDate
-                              FROM dbo.Reservations r
-                              INNER JOIN dbo.Rooms rm
-                                  ON rm.RoomId = r.RoomId
+                            @"SELECT r.CheckInDate,
+                                     r.CheckOutDate,
+                                     COALESCE(
+                                         (SELECT SUM(rr.RoomRateSnapshot)
+                                          FROM dbo.ReservationRooms rr
+                                          WHERE rr.ReservationId = r.ReservationId),
+                                         rm.RoomRate) AS TotalNightlyRate
+                              FROM dbo.Reservations r WITH (UPDLOCK, HOLDLOCK)
+                              INNER JOIN dbo.Rooms rm ON rm.RoomId = r.RoomId
                               WHERE r.ReservationId = @id
                                 AND r.ReservationStatus = 'Checked In'
-                                AND NOT EXISTS (
+                                AND NOT EXISTS
+                                (
                                     SELECT 1
                                     FROM dbo.Payments p
                                     WHERE p.ReservationId = r.ReservationId
-                                      AND p.PaymentStatus = 'Paid')",
-                            connection,
-                            transaction))
+                                      AND p.PaymentStatus = 'Paid'
+                                )", connection, transaction))
                         {
-                            read.Parameters.Add(
-                                "@id",
-                                SqlDbType.Int).Value =
-                                billing.ReservationId;
+                            read.Parameters.Add("@id", SqlDbType.Int).Value = billing.ReservationId;
 
-                            using (SqlDataReader reader =
-                                read.ExecuteReader())
+                            using (SqlDataReader reader = read.ExecuteReader())
                             {
                                 if (!reader.Read())
-                                {
                                     throw new InvalidOperationException(
-                                        "This reservation is no longer checked in, " +
-                                        "or is already paid.");
-                                }
+                                        "This reservation is no longer checked in, or is already paid.");
 
-                                decimal rate =
-                                    Convert.ToDecimal(
-                                        reader["RoomRate"]);
-
-                                DateTime start =
-                                    Convert.ToDateTime(
-                                        reader["CheckInDate"]);
-
-                                DateTime end =
-                                    Convert.ToDateTime(
-                                        reader["CheckOutDate"]);
-
-                                int nights =
-                                    Math.Max(
-                                        1,
-                                        (end.Date - start.Date).Days);
-
-                                total = rate * nights;
+                                decimal nightlyRate =
+                                    Convert.ToDecimal(reader["TotalNightlyRate"]);
+                                DateTime start = Convert.ToDateTime(reader["CheckInDate"]);
+                                DateTime end = Convert.ToDateTime(reader["CheckOutDate"]);
+                                total = nightlyRate * Math.Max(1, (end.Date - start.Date).Days);
                             }
                         }
 
                         if (total != billing.TotalBill)
-                        {
                             throw new InvalidOperationException(
-                                "The billing amount has changed. " +
-                                "Search the guest again.");
-                        }
+                                "The billing amount has changed. Search the guest again.");
 
                         PaymentReceiptInfo receipt;
 
                         using (SqlCommand payment = new SqlCommand(
                             @"INSERT INTO dbo.Payments
-                              (
-                                  ReservationId,
-                                  PaymentAmount,
-                                  PaymentMethod,
-                                  PaymentStatus,
-                                  AmountReceived,
-                                  ChangeAmount,
-                                  ProcessedBy
-                              )
-                              OUTPUT
-                                  INSERTED.PaymentId,
-                                  INSERTED.PaymentDate
+                              (ReservationId, PaymentAmount, PaymentMethod, PaymentStatus,
+                               AmountReceived, ChangeAmount, ProcessedBy)
+                              OUTPUT INSERTED.PaymentId, INSERTED.PaymentDate
                               VALUES
-                              (
-                                  @id,
-                                  @amount,
-                                  @method,
-                                  'Paid',
-                                  @received,
-                                  @change,
-                                  @processedBy
-                              )",
-                            connection,
-                            transaction))
+                              (@id, @amount, @method, 'Paid',
+                               @received, @change, @processedBy)",
+                            connection, transaction))
                         {
-                            payment.Parameters.Add(
-                                "@id",
-                                SqlDbType.Int).Value =
-                                billing.ReservationId;
+                            payment.Parameters.Add("@id", SqlDbType.Int).Value = billing.ReservationId;
 
-                            SqlParameter amount =
-                                payment.Parameters.Add(
-                                    "@amount",
-                                    SqlDbType.Decimal);
-
+                            SqlParameter amount = payment.Parameters.Add("@amount", SqlDbType.Decimal);
                             amount.Precision = 18;
                             amount.Scale = 2;
                             amount.Value = total;
 
-                            payment.Parameters.Add(
-                                "@method",
-                                SqlDbType.NVarChar,
-                                30).Value =
-                                method;
+                            payment.Parameters.Add("@method", SqlDbType.NVarChar, 30).Value = method;
 
-                            SqlParameter received =
-                                payment.Parameters.Add(
-                                    "@received",
-                                    SqlDbType.Decimal);
-
+                            SqlParameter received = payment.Parameters.Add("@received", SqlDbType.Decimal);
                             received.Precision = 18;
                             received.Scale = 2;
                             received.Value = amountReceived;
 
-                            SqlParameter change =
-                                payment.Parameters.Add(
-                                    "@change",
-                                    SqlDbType.Decimal);
-
+                            SqlParameter change = payment.Parameters.Add("@change", SqlDbType.Decimal);
                             change.Precision = 18;
                             change.Scale = 2;
                             change.Value = changeAmount;
 
-                            string staff =
-                                string.IsNullOrWhiteSpace(processedBy)
-                                    ? "Front Desk"
-                                    : processedBy.Trim();
+                            string staff = string.IsNullOrWhiteSpace(processedBy)
+                                ? "Front Desk" : processedBy.Trim();
 
-                            payment.Parameters.Add(
-                                "@processedBy",
-                                SqlDbType.NVarChar,
-                                100).Value =
-                                staff;
+                            payment.Parameters.Add("@processedBy", SqlDbType.NVarChar, 100).Value = staff;
 
-                            using (SqlDataReader paymentReader =
-                                payment.ExecuteReader())
+                            using (SqlDataReader paymentReader = payment.ExecuteReader())
                             {
                                 if (!paymentReader.Read())
-                                {
                                     throw new InvalidOperationException(
                                         "Payment could not be recorded.");
-                                }
 
                                 receipt = new PaymentReceiptInfo
                                 {
-                                    PaymentId =
-                                        Convert.ToInt32(
-                                            paymentReader["PaymentId"]),
-
-                                    PaymentDate =
-                                        Convert.ToDateTime(
-                                            paymentReader["PaymentDate"]),
-
+                                    PaymentId = Convert.ToInt32(paymentReader["PaymentId"]),
+                                    PaymentDate = Convert.ToDateTime(paymentReader["PaymentDate"]),
                                     PaymentAmount = total,
                                     AmountReceived = amountReceived,
                                     ChangeAmount = changeAmount,
@@ -388,153 +302,141 @@ namespace BusinessLogic
                               SET ReservationStatus = 'Checked Out'
                               WHERE ReservationId = @id
                                 AND ReservationStatus = 'Checked In'",
-                            connection,
-                            transaction))
+                            connection, transaction))
                         {
-                            update.Parameters.Add(
-                                "@id",
-                                SqlDbType.Int).Value =
-                                billing.ReservationId;
-
+                            update.Parameters.Add("@id", SqlDbType.Int).Value = billing.ReservationId;
                             if (update.ExecuteNonQuery() != 1)
-                            {
                                 throw new InvalidOperationException(
                                     "Checkout could not update the reservation.");
-                            }
                         }
 
                         transaction.Commit();
-
                         return receipt;
                     }
                     catch
                     {
-                        try
-                        {
-                            transaction.Rollback();
-                        }
-                        catch
-                        {
-                            // Preserve the original exception.
-                        }
-
+                        try { transaction.Rollback(); } catch { }
                         throw;
                     }
                 }
             }
         }
 
-        private const string BillingSelectSql = @"
-            SELECT TOP 2
-                   r.ReservationId,
-                   g.GuestName,
-                   g.ContactNumber,
-                   g.Email,
-                   g.HomeAddress,
-                   g.IdType,
-                   rm.RoomNumber,
-                   rm.RoomType,
-                   rm.RoomRate,
-                   r.CheckInDate,
-                   r.CheckOutDate,
-                   r.NumberOfGuests,
-                   r.Adults,
-                   r.Children,
-                   r.SpecialRequest
-            FROM dbo.Reservations r
-            INNER JOIN dbo.Guests g
-                ON g.GuestId = r.GuestId
-            INNER JOIN dbo.Rooms rm
-                ON rm.RoomId = r.RoomId";
-
-        private static BillingInfo ReadBilling(
-            SqlDataReader reader)
+        private static BillingInfo LoadBilling(SqlConnection connection, int reservationId)
         {
-            DateTime arrival =
-                Convert.ToDateTime(
-                    reader["CheckInDate"]);
+            int primaryRoomId;
+            BillingInfo billing;
 
-            DateTime departure =
-                Convert.ToDateTime(
-                    reader["CheckOutDate"]);
-
-            decimal rate =
-                Convert.ToDecimal(
-                    reader["RoomRate"]);
-
-            int nights =
-                Math.Max(
-                    1,
-                    (departure.Date - arrival.Date).Days);
-
-            return new BillingInfo
+            using (SqlCommand command = new SqlCommand(
+                @"SELECT r.ReservationId,
+                         r.RoomId,
+                         r.CheckInDate,
+                         r.CheckOutDate,
+                         r.NumberOfGuests,
+                         r.Adults,
+                         r.Children,
+                         r.RoomCount,
+                         r.SpecialRequest,
+                         r.ReservationStatus,
+                         g.GuestName,
+                         g.ContactNumber,
+                         g.Email,
+                         g.HomeAddress,
+                         g.IdType
+                  FROM dbo.Reservations r
+                  INNER JOIN dbo.Guests g ON g.GuestId = r.GuestId
+                  WHERE r.ReservationId = @id
+                    AND r.ReservationStatus = 'Checked In'", connection))
             {
-                ReservationId =
-                    Convert.ToInt32(
-                        reader["ReservationId"]),
+                command.Parameters.Add("@id", SqlDbType.Int).Value = reservationId;
 
-                GuestName =
-                    Convert.ToString(
-                        reader["GuestName"]),
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (!reader.Read()) return null;
 
-                GuestContactNumber =
-                    Convert.ToString(
-                        reader["ContactNumber"]),
+                    DateTime arrival = Convert.ToDateTime(reader["CheckInDate"]);
+                    DateTime departure = Convert.ToDateTime(reader["CheckOutDate"]);
 
-                GuestEmail =
-                    Convert.ToString(
-                        reader["Email"]),
+                    billing = new BillingInfo
+                    {
+                        ReservationId = Convert.ToInt32(reader["ReservationId"]),
+                        GuestName = Convert.ToString(reader["GuestName"]),
+                        GuestContactNumber = Convert.ToString(reader["ContactNumber"]),
+                        GuestEmail = Convert.ToString(reader["Email"]),
+                        GuestAddress = Convert.ToString(reader["HomeAddress"]),
+                        GuestIdType = Convert.ToString(reader["IdType"]),
+                        CheckInDate = arrival,
+                        CheckOutDate = departure,
+                        StayDays = Math.Max(1, (departure.Date - arrival.Date).Days),
+                        RoomCount = Convert.ToInt32(reader["RoomCount"]),
+                        NumberOfGuests = Convert.ToInt32(reader["NumberOfGuests"]),
+                        Adults = Convert.ToInt32(reader["Adults"]),
+                        Children = Convert.ToInt32(reader["Children"]),
+                        SpecialRequest = Convert.ToString(reader["SpecialRequest"]),
+                        ReservationStatus = Convert.ToString(reader["ReservationStatus"])
+                    };
 
-                GuestAddress =
-                    Convert.ToString(
-                        reader["HomeAddress"]),
+                    primaryRoomId = Convert.ToInt32(reader["RoomId"]);
+                }
+            }
 
-                GuestIdType =
-                    Convert.ToString(
-                        reader["IdType"]),
+            List<string> roomNumbers = new List<string>();
+            List<string> roomTypes = new List<string>();
+            decimal totalNightlyRate = 0m;
 
-                RoomNumber =
-                    Convert.ToString(
-                        reader["RoomNumber"]),
+            using (SqlCommand roomCommand = new SqlCommand(
+                @"SELECT rm.RoomNumber,
+                         rm.RoomType,
+                         rr.RoomRateSnapshot
+                  FROM dbo.ReservationRooms rr
+                  INNER JOIN dbo.Rooms rm ON rm.RoomId = rr.RoomId
+                  WHERE rr.ReservationId = @id
+                  ORDER BY rm.RoomNumber", connection))
+            {
+                roomCommand.Parameters.Add("@id", SqlDbType.Int).Value = reservationId;
 
-                RoomType =
-                    Convert.ToString(
-                        reader["RoomType"]),
+                using (SqlDataReader reader = roomCommand.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        roomNumbers.Add(Convert.ToString(reader["RoomNumber"]));
+                        string type = Convert.ToString(reader["RoomType"]);
+                        if (!roomTypes.Contains(type)) roomTypes.Add(type);
+                        totalNightlyRate += Convert.ToDecimal(reader["RoomRateSnapshot"]);
+                    }
+                }
+            }
 
-                RoomRate = rate,
+            // Backward compatibility for a reservation created before ReservationRooms existed.
+            if (roomNumbers.Count == 0)
+            {
+                using (SqlCommand fallback = new SqlCommand(
+                    @"SELECT RoomNumber, RoomType, RoomRate
+                      FROM dbo.Rooms
+                      WHERE RoomId = @roomId", connection))
+                {
+                    fallback.Parameters.Add("@roomId", SqlDbType.Int).Value = primaryRoomId;
+                    using (SqlDataReader reader = fallback.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            roomNumbers.Add(Convert.ToString(reader["RoomNumber"]));
+                            roomTypes.Add(Convert.ToString(reader["RoomType"]));
+                            totalNightlyRate = Convert.ToDecimal(reader["RoomRate"]);
+                        }
+                    }
+                }
+            }
 
-                CheckInDate = arrival,
-                CheckOutDate = departure,
+            billing.RoomCount = roomNumbers.Count;
+            billing.RoomNumber = string.Join(", ", roomNumbers.ToArray());
+            billing.RoomType = string.Join(", ", roomTypes.ToArray());
+            billing.RoomRate = totalNightlyRate;
+            billing.RoomCharges = totalNightlyRate * billing.StayDays;
+            billing.OtherCharges = 0m;
+            billing.TotalBill = billing.RoomCharges + billing.OtherCharges;
 
-                StayDays = nights,
-
-                NumberOfGuests =
-                    Convert.ToInt32(
-                        reader["NumberOfGuests"]),
-
-                Adults =
-                    Convert.ToInt32(
-                        reader["Adults"]),
-
-                Children =
-                    Convert.ToInt32(
-                        reader["Children"]),
-
-                SpecialRequest =
-                    Convert.ToString(
-                        reader["SpecialRequest"]),
-
-                RoomCharges =
-                    rate * nights,
-
-                OtherCharges = 0m,
-
-                TotalBill =
-                    rate * nights,
-
-                ReservationStatus =
-                    "Checked In"
-            };
+            return billing;
         }
     }
 }

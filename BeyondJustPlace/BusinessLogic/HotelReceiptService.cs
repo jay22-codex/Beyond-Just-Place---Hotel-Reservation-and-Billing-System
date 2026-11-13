@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
@@ -51,18 +51,18 @@ namespace BusinessLogic
             html.Append("Reservation ID: ").Append(billing.ReservationId).Append("</div></div>");
 
             html.Append("<h2>Guest / Stay Information</h2><table>");
-            Row(html, "Guest Name", billing.GuestName, "Room", billing.RoomNumber);
-            Row(html, "Contact Number", billing.GuestContactNumber, "Room Type", billing.RoomType);
+            Row(html, "Guest Name", billing.GuestName, "Room(s)", billing.RoomNumber);
+            Row(html, "Contact Number", billing.GuestContactNumber, "Room Type(s)", billing.RoomType);
             Row(html, "Email", billing.GuestEmail, "Check-In", DateValue(billing.CheckInDate));
             Row(html, "Address", billing.GuestAddress, "Check-Out", DateValue(billing.CheckOutDate));
-            Row(html, "ID Type", billing.GuestIdType, "Nights", billing.StayDays.ToString());
+            Row(html, "ID Type", billing.GuestIdType, "Rooms / Nights", billing.RoomCount + " room(s) / " + billing.StayDays + " night(s)");
             Row(html, "Guests", billing.NumberOfGuests.ToString(), "Adults / Children", billing.Adults + " / " + billing.Children);
             if (!string.IsNullOrWhiteSpace(billing.SpecialRequest))
                 Row(html, "Special Request", billing.SpecialRequest, "Status", "Checked Out");
             html.Append("</table>");
 
             html.Append("<h2>Charges</h2><table><tr><th>Description</th><th class='right'>Rate</th><th class='right'>Qty</th><th class='right'>Amount</th></tr>");
-            html.Append("<tr><td>Room Charges</td><td class='right'>PHP ").Append(M(billing.RoomRate)).Append("</td><td class='right'>").Append(billing.StayDays).Append("</td><td class='right'>PHP ").Append(M(billing.RoomCharges)).Append("</td></tr>");
+            html.Append("<tr><td>Room Charges (").Append(billing.RoomCount).Append(" room(s))</td><td class='right'>PHP ").Append(M(billing.RoomRate)).Append(" / night</td><td class='right'>").Append(billing.StayDays).Append(" night(s)</td><td class='right'>PHP ").Append(M(billing.RoomCharges)).Append("</td></tr>");
             html.Append("<tr><td>Other Charges</td><td class='right'>PHP ").Append(M(billing.OtherCharges)).Append("</td><td class='right'>").Append(billing.OtherCharges > 0m ? "1" : "0").Append("</td><td class='right'>PHP ").Append(M(billing.OtherCharges)).Append("</td></tr>");
             html.Append("<tr class='total'><td colspan='3'>TOTAL BILL</td><td class='right'>PHP ").Append(M(billing.TotalBill)).Append("</td></tr></table>");
 

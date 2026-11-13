@@ -169,6 +169,22 @@ BEGIN
     );
 END;
 
+IF OBJECT_ID(N'dbo.ReservationRooms', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ReservationRooms
+    (
+        ReservationRoomId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ReservationRooms PRIMARY KEY,
+        ReservationId INT NOT NULL,
+        RoomId INT NOT NULL,
+        RoomRateSnapshot DECIMAL(18,2) NOT NULL,
+        ReservationFeeSnapshot DECIMAL(18,2) NULL,
+        CONSTRAINT FK_ReservationRooms_Reservations FOREIGN KEY (ReservationId)
+            REFERENCES dbo.Reservations(ReservationId),
+        CONSTRAINT FK_ReservationRooms_Rooms FOREIGN KEY (RoomId)
+            REFERENCES dbo.Rooms(RoomId)
+    );
+END;
+
 IF OBJECT_ID(N'dbo.Payments', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.Payments
@@ -205,6 +221,37 @@ END;");
                 EnsureColumn(connection, "dbo.Reservations", "ReservationFeePaymentMethod", "NVARCHAR(30) NULL");
                 EnsureColumn(connection, "dbo.Reservations", "CreatedAt", "DATETIME2 NOT NULL CONSTRAINT DF_Reservations_CreatedAt_Upgrade DEFAULT SYSDATETIME()");
 
+                // ReservationRooms is the multi-room child table. Backfill all
+                // existing one-room reservations so old local databases upgrade safely.
+                Execute(connection, @"
+IF OBJECT_ID(N'dbo.ReservationRooms', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ReservationRooms
+    (
+        ReservationRoomId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ReservationRooms PRIMARY KEY,
+        ReservationId INT NOT NULL,
+        RoomId INT NOT NULL,
+        RoomRateSnapshot DECIMAL(18,2) NOT NULL,
+        ReservationFeeSnapshot DECIMAL(18,2) NULL,
+        CONSTRAINT FK_ReservationRooms_Reservations FOREIGN KEY (ReservationId)
+            REFERENCES dbo.Reservations(ReservationId),
+        CONSTRAINT FK_ReservationRooms_Rooms FOREIGN KEY (RoomId)
+            REFERENCES dbo.Rooms(RoomId)
+    );
+END;
+
+INSERT INTO dbo.ReservationRooms
+(ReservationId, RoomId, RoomRateSnapshot, ReservationFeeSnapshot)
+SELECT r.ReservationId, r.RoomId, rm.RoomRate, rm.ReservationFee
+FROM dbo.Reservations r
+INNER JOIN dbo.Rooms rm ON rm.RoomId = r.RoomId
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM dbo.ReservationRooms rr
+    WHERE rr.ReservationId = r.ReservationId
+);");
+
                 EnsureColumn(connection, "dbo.Payments", "AmountReceived", "DECIMAL(18,2) NULL");
                 EnsureColumn(connection, "dbo.Payments", "ChangeAmount", "DECIMAL(18,2) NULL");
                 EnsureColumn(connection, "dbo.Payments", "ProcessedBy", "NVARCHAR(100) NULL");
@@ -226,6 +273,14 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Reservations_RoomDate
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Reservations_GuestStatus' AND object_id = OBJECT_ID(N'dbo.Reservations'))
     CREATE INDEX IX_Reservations_GuestStatus
         ON dbo.Reservations(GuestId, ReservationStatus, ReservationId);
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_ReservationRooms_ReservationRoom' AND object_id = OBJECT_ID(N'dbo.ReservationRooms'))
+    CREATE UNIQUE INDEX UX_ReservationRooms_ReservationRoom
+        ON dbo.ReservationRooms(ReservationId, RoomId);
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ReservationRooms_RoomReservation' AND object_id = OBJECT_ID(N'dbo.ReservationRooms'))
+    CREATE INDEX IX_ReservationRooms_RoomReservation
+        ON dbo.ReservationRooms(RoomId, ReservationId);
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_Payments_PaidReservation' AND object_id = OBJECT_ID(N'dbo.Payments'))
    AND NOT EXISTS (SELECT ReservationId FROM dbo.Payments WHERE PaymentStatus=N'Paid' GROUP BY ReservationId HAVING COUNT(*) > 1)
