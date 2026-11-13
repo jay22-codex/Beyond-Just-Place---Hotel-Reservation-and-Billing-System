@@ -16,8 +16,8 @@ namespace BusinessLogic
                 throw new Exception(
                     "Please enter guest name.");
 
-            return repository.SearchGuest(
-                guestName);
+            return new FrontDeskOperationsService()
+                .GetCheckedInBilling(guestName);
         }
 
         public void ConfirmPayment(

@@ -1,4 +1,4 @@
-namespace Model
+﻿namespace Model
 {
     public class BillingInfo
     {
@@ -19,6 +19,7 @@ namespace Model
         public string RoomType { get; set; }
 
         public int StayDays { get; set; }
+        public int RoomCount { get; set; }
 
         public decimal RoomRate { get; set; }
 

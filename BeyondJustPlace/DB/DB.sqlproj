@@ -66,6 +66,7 @@
     <Build Include="Table\Guests.sql" />
     <Build Include="Table\Rooms.sql" />
     <Build Include="Table\Reservations.sql" />
+    <Build Include="Table\ReservationRooms.sql" />
     <Build Include="Table\Payments.sql" />
   </ItemGroup>
 </Project>
