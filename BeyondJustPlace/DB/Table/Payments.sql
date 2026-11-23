@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[Payments]
+﻿CREATE TABLE [dbo].[Payments]
 (
     [PaymentId] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Payments] PRIMARY KEY,
     [ReservationId] INT NOT NULL,
@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[Payments]
     [AmountReceived] DECIMAL(18,2) NULL,
     [ChangeAmount] DECIMAL(18,2) NULL,
     [ProcessedBy] NVARCHAR(100) NULL,
+    [PaymentReference] NVARCHAR(100) NULL,
     [PaymentDate] DATETIME2 NOT NULL CONSTRAINT [DF_Payments_Date] DEFAULT SYSDATETIME(),
     CONSTRAINT [FK_Payments_Reservations] FOREIGN KEY ([ReservationId])
         REFERENCES [dbo].[Reservations]([ReservationId])

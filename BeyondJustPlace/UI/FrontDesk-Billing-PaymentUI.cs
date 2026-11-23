@@ -24,6 +24,9 @@ namespace UI
         }
 
         private BillingInfo selectedBilling;
+        private readonly HotelEnhancementService enhancements = new HotelEnhancementService();
+        private Button btnAddService,btnViewServices;
+        private Label lblDepositCredit;
 
         // Used by Check-In / Check-Out after the Billing form closes.
         public bool PaymentCompleted { get; private set; }
@@ -39,6 +42,7 @@ namespace UI
             InitializeComponent();
 
             selectedBilling = billing;
+            AddChargeControls();
 
             // Wire the runtime events once.
             this.Load -= BillingForm_Load;
@@ -67,6 +71,63 @@ namespace UI
                     SearchCheckedInGuest();
                 }
             };
+        }
+
+        private void AddChargeControls()
+        {
+            // Placed inside the existing Charges section; no old control names changed.
+            btnAddService = new Button{Text="+ Food / Laundry",Location=new System.Drawing.Point(30,308),
+                Size=new System.Drawing.Size(175,34),Font=new System.Drawing.Font("Arial",10F,System.Drawing.FontStyle.Bold),
+                BackColor=System.Drawing.Color.FromArgb(224,224,224),UseVisualStyleBackColor=false};
+            btnViewServices = new Button{Text="View Add-ons",Location=new System.Drawing.Point(220,308),
+                Size=new System.Drawing.Size(155,34),BackColor=System.Drawing.Color.FromArgb(224,224,224),UseVisualStyleBackColor=false};
+            lblDepositCredit=new Label{Text="Reservation deposit credited: PHP 0.00",Location=new System.Drawing.Point(410,310),
+                Size=new System.Drawing.Size(560,30),Font=new System.Drawing.Font("Arial",11F,System.Drawing.FontStyle.Bold)};
+            groupBox1.Controls.AddRange(new Control[]{btnAddService,btnViewServices,lblDepositCredit});
+            btnAddService.Click+=(s,e)=>AddServiceCharge();
+            btnViewServices.Click+=(s,e)=>ViewServiceCharges();
+        }
+
+        private void AddServiceCharge()
+        {
+            if(selectedBilling==null){MessageBox.Show("Select a checked-in guest first.","Service Add-ons");return;}
+            using(Form dialog=new Form{Text="Beyond Just Place - Food / Laundry",ClientSize=new System.Drawing.Size(500,290),
+                BackColor=System.Drawing.Color.FromArgb(241,239,249),StartPosition=FormStartPosition.CenterParent,FormBorderStyle=FormBorderStyle.FixedDialog})
+            {
+                ComboBox service=new ComboBox{Location=new System.Drawing.Point(155,30),Width=300,DropDownStyle=ComboBoxStyle.DropDownList};
+                service.Items.AddRange(new object[]{"Food","Laundry"});service.SelectedIndex=0;
+                NumericUpDown quantity=new NumericUpDown{Location=new System.Drawing.Point(155,88),Width=300,Minimum=1,Maximum=100,Value=1};
+                NumericUpDown price=new NumericUpDown{Location=new System.Drawing.Point(155,146),Width=300,Minimum=0,Maximum=100000,DecimalPlaces=2,ThousandsSeparator=true};
+                Button save=new Button{Text="Add Charge",Location=new System.Drawing.Point(155,210),Size=new System.Drawing.Size(135,40),DialogResult=DialogResult.OK};
+                Button cancel=new Button{Text="Cancel",Location=new System.Drawing.Point(320,210),Size=new System.Drawing.Size(130,40),DialogResult=DialogResult.Cancel};
+                dialog.Controls.AddRange(new Control[]{
+                    new Label{Text="Service",Location=new System.Drawing.Point(22,30),Size=new System.Drawing.Size(110,26)},
+                    new Label{Text="Quantity",Location=new System.Drawing.Point(22,88),Size=new System.Drawing.Size(110,26)},
+                    new Label{Text="Unit Price (PHP)",Location=new System.Drawing.Point(22,146),Size=new System.Drawing.Size(130,26)},
+                    service,quantity,price,save,cancel});
+                dialog.AcceptButton=save;dialog.CancelButton=cancel;
+                if(dialog.ShowDialog(this)!=DialogResult.OK)return;
+                try
+                {
+                    enhancements.AddServiceCharge(selectedBilling.ReservationId,service.Text,(int)quantity.Value,price.Value);
+                    int id=selectedBilling.ReservationId;
+                    selectedBilling=Operations.GetCheckedInBillingByReservationId(id);
+                    DisplayBilling();
+                    MessageBox.Show("Add-on saved. Grand total has been recalculated.","Service Charges",MessageBoxButtons.OK,MessageBoxIcon.Information);
+                }
+                catch(Exception ex){MessageBox.Show(ex.Message,"Service Charges",MessageBoxButtons.OK,MessageBoxIcon.Error);}
+            }
+        }
+
+        private void ViewServiceCharges()
+        {
+            if(selectedBilling==null)return;
+            using(Form dialog=new Form{Text="Beyond Just Place - Itemized Add-ons",Width=870,Height=430,StartPosition=FormStartPosition.CenterParent})
+            {
+                DataGridView table=new DataGridView{Dock=DockStyle.Fill,ReadOnly=true,AllowUserToAddRows=false,
+                    AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill,DataSource=enhancements.GetServiceCharges(selectedBilling.ReservationId)};
+                dialog.Controls.Add(table);dialog.ShowDialog(this);
+            }
         }
 
         private void BillingForm_Load(object sender, EventArgs e)
@@ -235,6 +296,11 @@ namespace UI
                     : "PHP 0.00";
 
             lblPaymentAmountOutput.Text = lblTotalBill.Text;
+            if(lblDepositCredit!=null)
+                lblDepositCredit.Text="Deposit credited: PHP "+(hasGuest?Money(selectedBilling.DepositPaid):"0.00")+
+                    "   |   Guest pays remaining balance";
+            if(btnAddService!=null)btnAddService.Enabled=hasGuest && !PaymentCompleted;
+            if(btnViewServices!=null)btnViewServices.Enabled=hasGuest;
 
             cmbPaymentMethod.Enabled = hasGuest;
             txtAmountReceived.Enabled = hasGuest;
@@ -330,6 +396,7 @@ namespace UI
             object sender,
             EventArgs e)
         {
+            if (!CurrentUserSession.RequireFrontDesk(this)) return;
             if (PaymentCompleted)
                 return;
 
@@ -417,6 +484,13 @@ namespace UI
             if (response != DialogResult.Yes)
                 return;
 
+            string gcashReference=null;
+            if(cmbPaymentMethod.Text=="GCash")
+            {
+                gcashReference=PaymentUiDialogs.RequestGcCashReference(this,selectedBilling.TotalBill,"Checkout / Final Payment");
+                if(gcashReference==null)return;
+            }
+
             btnConfirmPayment.Enabled = false;
 
             PaymentReceiptInfo paymentReceipt;
@@ -434,7 +508,8 @@ namespace UI
                         selectedBilling,
                         cmbPaymentMethod.Text,
                         received,
-                        processedBy);
+                        processedBy,
+                        gcashReference);
 
                 PaymentCompleted = true;
                 selectedBilling.ReservationStatus =

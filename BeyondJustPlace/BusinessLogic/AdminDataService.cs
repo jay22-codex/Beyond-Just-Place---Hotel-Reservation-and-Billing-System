@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -31,7 +31,9 @@ namespace BusinessLogic
                 snapshot.PendingReservations = ScalarInt(connection,
                     "SELECT COUNT(*) FROM dbo.Reservations WHERE ReservationStatus = N'Pending'");
                 snapshot.TotalRevenue = ScalarDecimal(connection,
-                    "SELECT ISNULL(SUM(PaymentAmount), 0) FROM dbo.Payments WHERE PaymentStatus = N'Paid'");
+                    @"SELECT ISNULL((SELECT SUM(PaymentAmount) FROM dbo.Payments WHERE PaymentStatus=N'Paid'),0)
+                      + ISNULL((SELECT SUM(ReservationFeeAmount) FROM dbo.Reservations
+                                WHERE ReservationFeeStatus=N'Paid'),0)");
 
                 snapshot.LatestActivity = FillTable(connection, @"
 SELECT TOP 15
@@ -63,13 +65,13 @@ ORDER BY r.ReservationId DESC");
                 connection.Open();
                 return FillTable(connection, @"
 SELECT RoomId, RoomNumber, RoomType, RoomRate, RoomCapacity,
-       ReservationFee, RoomStatus
+       BedCount, SizeSqm, Description, IsActive, ReservationFee, RoomStatus
 FROM dbo.Rooms
 ORDER BY RoomNumber");
             }
         }
 
-        public void AddRoom(string roomNumber, string roomType, decimal rate,
+        public int AddRoom(string roomNumber, string roomType, decimal rate,
             int capacity, decimal reservationFee, string status)
         {
             ValidateRoom(roomNumber, roomType, rate, capacity, reservationFee, status);
@@ -77,12 +79,24 @@ ORDER BY RoomNumber");
             using (SqlCommand command = new SqlCommand(@"
 INSERT INTO dbo.Rooms
 (RoomNumber, RoomType, RoomRate, RoomCapacity, ReservationFee, RoomStatus)
+OUTPUT INSERTED.RoomId
 VALUES (@number, @type, @rate, @capacity, @fee, @status)", connection))
             {
                 AddRoomParameters(command, roomNumber, roomType, rate,
                     capacity, reservationFee, status);
                 connection.Open();
-                command.ExecuteNonQuery();
+                using(SqlCommand dup=new SqlCommand("SELECT COUNT(*) FROM dbo.Rooms WHERE RoomNumber=@number",connection))
+                {
+                    dup.Parameters.Add("@number",SqlDbType.NVarChar,20).Value=roomNumber.Trim();
+                    if(Convert.ToInt32(dup.ExecuteScalar())>0)
+                        throw new InvalidOperationException("Duplicate room number. Use another room number.");
+                }
+                using(SqlCommand typeCheck=new SqlCommand("SELECT COUNT(*) FROM dbo.RoomTypes WHERE TypeName=@type AND IsActive=1",connection))
+                {
+                    typeCheck.Parameters.Add("@type",SqlDbType.NVarChar,100).Value=roomType.Trim();
+                    if(Convert.ToInt32(typeCheck.ExecuteScalar())==0)throw new InvalidOperationException("Select an active room type from Admin Room Type Setup.");
+                }
+                return Convert.ToInt32(command.ExecuteScalar());
             }
         }
 
@@ -103,37 +117,27 @@ WHERE RoomId=@id", connection))
                     capacity, reservationFee, status);
                 command.Parameters.Add("@id", SqlDbType.Int).Value = roomId;
                 connection.Open();
+                using(SqlCommand dup=new SqlCommand("SELECT COUNT(*) FROM dbo.Rooms WHERE RoomNumber=@number AND RoomId<>@id",connection))
+                {
+                    dup.Parameters.Add("@number",SqlDbType.NVarChar,20).Value=roomNumber.Trim();
+                    dup.Parameters.Add("@id",SqlDbType.Int).Value=roomId;
+                    if(Convert.ToInt32(dup.ExecuteScalar())>0)
+                        throw new InvalidOperationException("Duplicate room number. Use another room number.");
+                }
+                using(SqlCommand typeCheck=new SqlCommand("SELECT COUNT(*) FROM dbo.RoomTypes WHERE TypeName=@type AND IsActive=1",connection))
+                {
+                    typeCheck.Parameters.Add("@type",SqlDbType.NVarChar,100).Value=roomType.Trim();
+                    if(Convert.ToInt32(typeCheck.ExecuteScalar())==0)throw new InvalidOperationException("Select an active room type from Admin Room Type Setup.");
+                }
                 if (command.ExecuteNonQuery() != 1)
                     throw new InvalidOperationException("Room was not found.");
             }
         }
 
+        // Legacy API: deactivate rather than deleting reservation history.
         public void DeleteRoom(int roomId)
         {
-            if (roomId <= 0) throw new InvalidOperationException("Select a room first.");
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                connection.Open();
-                using (SqlCommand check = new SqlCommand(
-                    @"SELECT COUNT(*)
-                      FROM dbo.Reservations r
-                      WHERE r.RoomId=@id
-                         OR EXISTS
-                            (SELECT 1 FROM dbo.ReservationRooms rr
-                             WHERE rr.ReservationId=r.ReservationId AND rr.RoomId=@id)", connection))
-                {
-                    check.Parameters.Add("@id", SqlDbType.Int).Value = roomId;
-                    if (Convert.ToInt32(check.ExecuteScalar()) > 0)
-                        throw new InvalidOperationException(
-                            "This room already has reservation history. Change its status instead of deleting it.");
-                }
-                using (SqlCommand delete = new SqlCommand(
-                    "DELETE FROM dbo.Rooms WHERE RoomId=@id", connection))
-                {
-                    delete.Parameters.Add("@id", SqlDbType.Int).Value = roomId;
-                    delete.ExecuteNonQuery();
-                }
-            }
+            new HotelEnhancementService().SetRoomActive(roomId, false);
         }
 
         public DataTable GetUsers()
@@ -142,7 +146,7 @@ WHERE RoomId=@id", connection))
             {
                 connection.Open();
                 return FillTable(connection,
-                    "SELECT UserId, Username, Role FROM dbo.Users ORDER BY Username");
+                    "SELECT UserId, Username, Role, IsActive FROM dbo.Users ORDER BY Username");
             }
         }
 
@@ -155,7 +159,7 @@ INSERT INTO dbo.Users(Username, Password, Role)
 VALUES(@username, @password, @role)", connection))
             {
                 command.Parameters.Add("@username", SqlDbType.NVarChar, 50).Value = username.Trim();
-                command.Parameters.Add("@password", SqlDbType.NVarChar, 100).Value = password;
+                command.Parameters.Add("@password", SqlDbType.NVarChar, 300).Value = PasswordSecurity.Hash(password);
                 command.Parameters.Add("@role", SqlDbType.NVarChar, 20).Value = NormalizeRole(role);
                 connection.Open();
                 command.ExecuteNonQuery();
@@ -177,44 +181,30 @@ VALUES(@username, @password, @role)", connection))
                 command.Parameters.Add("@role", SqlDbType.NVarChar, 20).Value = NormalizeRole(role);
                 command.Parameters.Add("@id", SqlDbType.Int).Value = userId;
                 if (!string.IsNullOrWhiteSpace(newPassword))
-                    command.Parameters.Add("@password", SqlDbType.NVarChar, 100).Value = newPassword;
+                    command.Parameters.Add("@password", SqlDbType.NVarChar, 300).Value = PasswordSecurity.Hash(newPassword);
                 connection.Open();
+                using(SqlCommand check=new SqlCommand("SELECT Role FROM dbo.Users WHERE UserId=@id",connection))
+                {
+                    check.Parameters.Add("@id",SqlDbType.Int).Value=userId;
+                    string previous=Convert.ToString(check.ExecuteScalar());
+                    if(previous=="Admin" && NormalizeRole(role)!="Admin")
+                    {
+                        using(SqlCommand count=new SqlCommand("SELECT COUNT(*) FROM dbo.Users WHERE Role='Admin' AND IsActive=1",connection))
+                            if(Convert.ToInt32(count.ExecuteScalar())<2)throw new InvalidOperationException("At least one active Admin account must remain.");
+                    }
+                }
                 if (command.ExecuteNonQuery() != 1)
                     throw new InvalidOperationException("User was not found.");
             }
         }
 
+        // Permanent account deletion is intentionally disabled.
+        // Admin must deactivate an account using the User Maintenance screen,
+        // which checks the current user and ensures an Admin remains active.
         public void DeleteUser(int userId)
         {
-            if (userId <= 0) throw new InvalidOperationException("Select a user first.");
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                connection.Open();
-                using (SqlCommand adminCheck = new SqlCommand(@"
-SELECT CASE WHEN Role=N'Admin' THEN 1 ELSE 0 END
-FROM dbo.Users WHERE UserId=@id", connection))
-                {
-                    adminCheck.Parameters.Add("@id", SqlDbType.Int).Value = userId;
-                    object isAdminObj = adminCheck.ExecuteScalar();
-                    if (isAdminObj == null)
-                        throw new InvalidOperationException("User was not found.");
-                    if (Convert.ToInt32(isAdminObj) == 1)
-                    {
-                        using (SqlCommand adminCount = new SqlCommand(
-                            "SELECT COUNT(*) FROM dbo.Users WHERE Role=N'Admin'", connection))
-                        {
-                            if (Convert.ToInt32(adminCount.ExecuteScalar()) <= 1)
-                                throw new InvalidOperationException("At least one Admin account must remain.");
-                        }
-                    }
-                }
-                using (SqlCommand delete = new SqlCommand(
-                    "DELETE FROM dbo.Users WHERE UserId=@id", connection))
-                {
-                    delete.Parameters.Add("@id", SqlDbType.Int).Value = userId;
-                    delete.ExecuteNonQuery();
-                }
-            }
+            throw new InvalidOperationException(
+                "Permanent deletion is disabled. Use Activate / Deactivate in User Maintenance.");
         }
 
         public DataTable GetReservations()
@@ -236,7 +226,8 @@ SELECT r.ReservationId,
           ).value('.', 'nvarchar(max)'), 1, 2, N''), N''), rm.RoomNumber) AS RoomNumber,
        r.RoomCount,
        r.CheckInDate, r.CheckOutDate, r.ReservationStatus,
-       r.NumberOfGuests, r.Adults, r.Children, r.SpecialRequest
+       r.NumberOfGuests, r.Adults, r.Children, r.SpecialRequest,
+       r.ReservationFeeAmount,r.ReservationFeePaymentMethod,r.ReservationFeeStatus,r.ReservationFeeReference
 FROM dbo.Reservations r
 INNER JOIN dbo.Guests g ON g.GuestId=r.GuestId
 INNER JOIN dbo.Rooms rm ON rm.RoomId=r.RoomId
@@ -260,7 +251,8 @@ SELECT p.PaymentId, p.ReservationId, g.GuestName,
               ORDER BY rm2.RoomNumber
               FOR XML PATH(''), TYPE
           ).value('.', 'nvarchar(max)'), 1, 2, N''), N''), rm.RoomNumber) AS RoomNumber,
-       p.PaymentAmount, p.PaymentMethod, p.PaymentStatus, p.PaymentDate
+       p.PaymentAmount, p.PaymentMethod, p.PaymentReference,
+       p.PaymentStatus, p.PaymentDate
 FROM dbo.Payments p
 INNER JOIN dbo.Reservations r ON r.ReservationId=p.ReservationId
 INNER JOIN dbo.Guests g ON g.GuestId=r.GuestId

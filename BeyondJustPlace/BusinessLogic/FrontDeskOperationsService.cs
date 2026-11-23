@@ -52,9 +52,11 @@ namespace BusinessLogic
             using (SqlConnection connection = new SqlConnection(connectionString))
             using (SqlCommand command = new SqlCommand(
                 @"UPDATE dbo.Reservations
-                  SET ReservationStatus = 'Checked In'
+                  SET ReservationStatus = 'Checked In',IdentityChecked=1,KeysIssued=1
                   WHERE ReservationId = @reservationId
-                    AND ReservationStatus IN ('Pending','Confirmed')", connection))
+                    AND ReservationStatus='Confirmed'
+                    AND EXISTS(SELECT 1 FROM dbo.Guests g
+                               WHERE g.GuestId=dbo.Reservations.GuestId AND g.IdVerified=1 AND g.IsActive=1)", connection))
             {
                 command.Parameters.Add("@reservationId", SqlDbType.Int).Value = reservationId;
                 connection.Open();
@@ -76,6 +78,8 @@ namespace BusinessLogic
                   FROM dbo.Rooms rm
                   WHERE rm.RoomType = @roomType
                     AND ISNULL(rm.RoomStatus, N'Available') = N'Available'
+                    AND rm.IsActive=1
+                    AND EXISTS (SELECT 1 FROM dbo.RoomTypes t WHERE t.TypeName=rm.RoomType AND t.IsActive=1)
                     AND NOT EXISTS
                     (
                         SELECT 1
@@ -174,7 +178,8 @@ namespace BusinessLogic
             BillingInfo billing,
             string method,
             decimal amountReceived,
-            string processedBy)
+            string processedBy,
+            string paymentReference = null)
         {
             if (billing == null)
                 throw new InvalidOperationException("Select a checked-in guest first.");
@@ -185,6 +190,10 @@ namespace BusinessLogic
             if (amountReceived < billing.TotalBill)
                 throw new InvalidOperationException(
                     "Amount received must cover the total bill.");
+
+            paymentReference = (paymentReference ?? "").Trim();
+            if (method == "GCash" && (paymentReference.Length < 6 || paymentReference.Length > 100))
+                throw new InvalidOperationException("Enter the verified GCash receipt reference number.");
 
             decimal changeAmount = method == "Cash"
                 ? Math.Max(0m, amountReceived - billing.TotalBill)
@@ -208,7 +217,10 @@ namespace BusinessLogic
                                          (SELECT SUM(rr.RoomRateSnapshot)
                                           FROM dbo.ReservationRooms rr
                                           WHERE rr.ReservationId = r.ReservationId),
-                                         rm.RoomRate) AS TotalNightlyRate
+                                         rm.RoomRate) AS TotalNightlyRate,
+                                     ISNULL((SELECT SUM(rs.Quantity*rs.UnitPrice)
+                                             FROM dbo.ReservationServices rs WHERE rs.ReservationId=r.ReservationId),0) AS ServiceTotal,
+                                     CASE WHEN r.ReservationFeeStatus=N'Paid' THEN ISNULL(r.ReservationFeeAmount,0) ELSE 0 END AS DepositPaid
                               FROM dbo.Reservations r WITH (UPDLOCK, HOLDLOCK)
                               INNER JOIN dbo.Rooms rm ON rm.RoomId = r.RoomId
                               WHERE r.ReservationId = @id
@@ -233,7 +245,9 @@ namespace BusinessLogic
                                     Convert.ToDecimal(reader["TotalNightlyRate"]);
                                 DateTime start = Convert.ToDateTime(reader["CheckInDate"]);
                                 DateTime end = Convert.ToDateTime(reader["CheckOutDate"]);
-                                total = nightlyRate * Math.Max(1, (end.Date - start.Date).Days);
+                                total = Math.Max(0m,nightlyRate * Math.Max(1, (end.Date - start.Date).Days)
+                                    + Convert.ToDecimal(reader["ServiceTotal"])
+                                    - Convert.ToDecimal(reader["DepositPaid"]));
                             }
                         }
 
@@ -241,16 +255,29 @@ namespace BusinessLogic
                             throw new InvalidOperationException(
                                 "The billing amount has changed. Search the guest again.");
 
+                        if (method == "GCash")
+                        {
+                            using (SqlCommand existingRef = new SqlCommand(
+                                "SELECT COUNT(*) FROM dbo.Reservations WHERE ReservationFeeReference=@reference",
+                                connection, transaction))
+                            {
+                                existingRef.Parameters.Add("@reference", SqlDbType.NVarChar, 100).Value = paymentReference;
+                                if (Convert.ToInt32(existingRef.ExecuteScalar()) > 0)
+                                    throw new InvalidOperationException(
+                                        "This GCash receipt reference is already used for a reservation deposit.");
+                            }
+                        }
+
                         PaymentReceiptInfo receipt;
 
                         using (SqlCommand payment = new SqlCommand(
                             @"INSERT INTO dbo.Payments
                               (ReservationId, PaymentAmount, PaymentMethod, PaymentStatus,
-                               AmountReceived, ChangeAmount, ProcessedBy)
+                               AmountReceived, ChangeAmount, ProcessedBy, PaymentReference)
                               OUTPUT INSERTED.PaymentId, INSERTED.PaymentDate
                               VALUES
                               (@id, @amount, @method, 'Paid',
-                               @received, @change, @processedBy)",
+                               @received, @change, @processedBy, @reference)",
                             connection, transaction))
                         {
                             payment.Parameters.Add("@id", SqlDbType.Int).Value = billing.ReservationId;
@@ -276,6 +303,8 @@ namespace BusinessLogic
                                 ? "Front Desk" : processedBy.Trim();
 
                             payment.Parameters.Add("@processedBy", SqlDbType.NVarChar, 100).Value = staff;
+                            payment.Parameters.Add("@reference", SqlDbType.NVarChar, 100).Value =
+                                paymentReference.Length == 0 ? (object)DBNull.Value : paymentReference;
 
                             using (SqlDataReader paymentReader = payment.ExecuteReader())
                             {
@@ -292,7 +321,8 @@ namespace BusinessLogic
                                     ChangeAmount = changeAmount,
                                     PaymentMethod = method,
                                     PaymentStatus = "Paid",
-                                    ProcessedBy = staff
+                                    ProcessedBy = staff,
+                                    ReferenceNumber = paymentReference
                                 };
                             }
                         }
@@ -342,7 +372,10 @@ namespace BusinessLogic
                          g.ContactNumber,
                          g.Email,
                          g.HomeAddress,
-                         g.IdType
+                         g.IdType,
+                         g.IdNumber,
+                         r.ReservationFeeAmount,
+                         r.ReservationFeeStatus
                   FROM dbo.Reservations r
                   INNER JOIN dbo.Guests g ON g.GuestId = r.GuestId
                   WHERE r.ReservationId = @id
@@ -365,6 +398,10 @@ namespace BusinessLogic
                         GuestEmail = Convert.ToString(reader["Email"]),
                         GuestAddress = Convert.ToString(reader["HomeAddress"]),
                         GuestIdType = Convert.ToString(reader["IdType"]),
+                        GuestIdNumber = Convert.ToString(reader["IdNumber"]),
+                        DepositPaid = Convert.ToString(reader["ReservationFeeStatus"])=="Paid"
+                            ? (reader["ReservationFeeAmount"]==DBNull.Value?0m:Convert.ToDecimal(reader["ReservationFeeAmount"]))
+                            : 0m,
                         CheckInDate = arrival,
                         CheckOutDate = departure,
                         StayDays = Math.Max(1, (departure.Date - arrival.Date).Days),
@@ -433,8 +470,13 @@ namespace BusinessLogic
             billing.RoomType = string.Join(", ", roomTypes.ToArray());
             billing.RoomRate = totalNightlyRate;
             billing.RoomCharges = totalNightlyRate * billing.StayDays;
-            billing.OtherCharges = 0m;
-            billing.TotalBill = billing.RoomCharges + billing.OtherCharges;
+            using (SqlCommand services = new SqlCommand(
+                "SELECT ISNULL(SUM(Quantity * UnitPrice),0) FROM dbo.ReservationServices WHERE ReservationId=@id",connection))
+            {
+                services.Parameters.Add("@id",SqlDbType.Int).Value=reservationId;
+                billing.OtherCharges=Convert.ToDecimal(services.ExecuteScalar());
+            }
+            billing.TotalBill=Math.Max(0m,billing.RoomCharges+billing.OtherCharges-billing.DepositPaid);
 
             return billing;
         }

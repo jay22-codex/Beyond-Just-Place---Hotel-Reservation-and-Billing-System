@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -47,6 +47,9 @@
     <Compile Include="AdminDataService.cs" />
     <Compile Include="DatabaseInitializer.cs" />
     <Compile Include="DatabaseConfig.cs" />
+    <Compile Include="PasswordSecurity.cs" />
+    <Compile Include="HotelEnhancementService.cs" />
+    <Compile Include="ReservationOverviewService.cs" />
     <Compile Include="FrontDeskOperationsService.cs" />
     <Compile Include="EmailJsReceiptService.cs" />
     <Compile Include="HotelReceiptService.cs" />

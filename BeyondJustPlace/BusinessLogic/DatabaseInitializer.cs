@@ -221,6 +221,84 @@ END;");
                 EnsureColumn(connection, "dbo.Reservations", "ReservationFeePaymentMethod", "NVARCHAR(30) NULL");
                 EnsureColumn(connection, "dbo.Reservations", "CreatedAt", "DATETIME2 NOT NULL CONSTRAINT DF_Reservations_CreatedAt_Upgrade DEFAULT SYSDATETIME()");
 
+                // Safe upgrades for professor-required guest, user and room data.
+                EnsureColumn(connection, "dbo.Guests", "IdNumber", "NVARCHAR(100) NULL");
+                EnsureColumn(connection, "dbo.Guests", "IsActive", "BIT NOT NULL CONSTRAINT DF_Guests_IsActive DEFAULT 1");
+                EnsureColumn(connection, "dbo.Guests", "IdVerified", "BIT NOT NULL CONSTRAINT DF_Guests_IdVerified DEFAULT 0");
+                EnsureColumn(connection, "dbo.Users", "IsActive", "BIT NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT 1");
+                Execute(connection, @"IF COL_LENGTH(N'dbo.Users',N'Password') < 600
+                    ALTER TABLE dbo.Users ALTER COLUMN [Password] NVARCHAR(300) NOT NULL;");
+                EnsureColumn(connection, "dbo.Rooms", "BedCount", "INT NULL");
+                EnsureColumn(connection, "dbo.Rooms", "SizeSqm", "INT NULL");
+                EnsureColumn(connection, "dbo.Rooms", "Description", "NVARCHAR(500) NULL");
+                EnsureColumn(connection, "dbo.Rooms", "IsActive", "BIT NOT NULL CONSTRAINT DF_Rooms_IsActive DEFAULT 1");
+                EnsureColumn(connection, "dbo.Reservations", "ReservationFeeStatus", "NVARCHAR(30) NOT NULL CONSTRAINT DF_Reservations_FeeStatus DEFAULT N'Unpaid'");
+                EnsureColumn(connection, "dbo.Reservations", "ReservationFeeReference", "NVARCHAR(100) NULL");
+                EnsureColumn(connection, "dbo.Reservations", "KeysIssued", "BIT NOT NULL CONSTRAINT DF_Reservations_KeysIssued DEFAULT 0");
+                EnsureColumn(connection, "dbo.Reservations", "IdentityChecked", "BIT NOT NULL CONSTRAINT DF_Reservations_IdChecked DEFAULT 0");
+                EnsureColumn(connection, "dbo.Payments", "PaymentReference", "NVARCHAR(100) NULL");
+
+                Execute(connection, @"
+IF OBJECT_ID(N'dbo.RoomTypes', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.RoomTypes
+    (
+        RoomTypeId INT IDENTITY(1,1) PRIMARY KEY,
+        TypeName NVARCHAR(100) NOT NULL,
+        Rate DECIMAL(18,2) NOT NULL,
+        Capacity INT NOT NULL,
+        BedCount INT NOT NULL,
+        SizeSqm INT NOT NULL,
+        ReservationFee DECIMAL(18,2) NOT NULL,
+        Description NVARCHAR(500) NOT NULL,
+        IsActive BIT NOT NULL DEFAULT 1
+    );
+END;
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name=N'UX_RoomTypes_Name' AND object_id=OBJECT_ID(N'dbo.RoomTypes'))
+    CREATE UNIQUE INDEX UX_RoomTypes_Name ON dbo.RoomTypes(TypeName);
+
+INSERT INTO dbo.RoomTypes(TypeName, Rate, Capacity, BedCount, SizeSqm, ReservationFee, Description)
+SELECT rm.RoomType, MAX(rm.RoomRate),
+       CASE WHEN MAX(ISNULL(rm.RoomCapacity,0)) < 1 THEN 2 ELSE MAX(rm.RoomCapacity) END,
+       CASE WHEN rm.RoomType=N'Family' THEN 3 WHEN rm.RoomType=N'Suite' THEN 2 ELSE 1 END,
+       CASE WHEN rm.RoomType=N'Standard' THEN 24 WHEN rm.RoomType=N'Deluxe' THEN 32
+            WHEN rm.RoomType=N'Family' THEN 50 ELSE 60 END,
+       MAX(ISNULL(rm.ReservationFee,0)),
+       rm.RoomType + N' hotel room with standard amenities.'
+FROM dbo.Rooms rm
+WHERE NOT EXISTS (SELECT 1 FROM dbo.RoomTypes rt WHERE rt.TypeName=rm.RoomType)
+GROUP BY rm.RoomType;
+
+UPDATE rm SET
+  rm.BedCount=COALESCE(rm.BedCount,rt.BedCount),
+  rm.SizeSqm=COALESCE(rm.SizeSqm,rt.SizeSqm),
+  rm.Description=COALESCE(NULLIF(rm.Description,N''),rt.Description),
+  rm.RoomCapacity=COALESCE(rm.RoomCapacity,rt.Capacity)
+FROM dbo.Rooms rm INNER JOIN dbo.RoomTypes rt ON rt.TypeName=rm.RoomType;
+
+IF OBJECT_ID(N'dbo.ReservationServices',N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ReservationServices
+    (
+        ServiceId INT IDENTITY(1,1) PRIMARY KEY,
+        ReservationId INT NOT NULL REFERENCES dbo.Reservations(ReservationId),
+        ServiceName NVARCHAR(30) NOT NULL,
+        Quantity INT NOT NULL,
+        UnitPrice DECIMAL(18,2) NOT NULL,
+        CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+        CONSTRAINT CK_ReservationServices_Quantity CHECK(Quantity>0),
+        CONSTRAINT CK_ReservationServices_Price CHECK(UnitPrice>=0)
+    );
+END;
+
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE name=N'UX_Reservations_GCashFeeRef' AND object_id=OBJECT_ID(N'dbo.Reservations'))
+    CREATE UNIQUE INDEX UX_Reservations_GCashFeeRef ON dbo.Reservations(ReservationFeeReference)
+    WHERE ReservationFeeReference IS NOT NULL;
+IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE name=N'UX_Payments_GCashRef' AND object_id=OBJECT_ID(N'dbo.Payments'))
+    CREATE UNIQUE INDEX UX_Payments_GCashRef ON dbo.Payments(PaymentReference)
+    WHERE PaymentReference IS NOT NULL;
+");
+
                 // ReservationRooms is the multi-room child table. Backfill all
                 // existing one-room reservations so old local databases upgrade safely.
                 Execute(connection, @"
@@ -340,6 +418,23 @@ VALUES
 (N'402', N'Suite',    4500.00, N'Available', 4, 1500.00);");
                     }
                 }
+
+                // Seed the type catalogue only after starter rooms are present.
+                Execute(connection, @"
+INSERT INTO dbo.RoomTypes(TypeName,Rate,Capacity,BedCount,SizeSqm,ReservationFee,Description)
+SELECT src.TypeName,src.Rate,src.Capacity,src.Beds,src.SizeSqm,src.Fee,src.Description
+FROM (VALUES
+(N'Standard',1500.00,2,1,24,500.00,N'Comfortable standard room with one bed, television and work desk.'),
+(N'Deluxe',2300.00,3,2,32,700.00,N'Spacious deluxe room with lounge seating and upgraded amenities.'),
+(N'Family',3200.00,5,3,50,1000.00,N'Family room with multiple beds and extra living space.'),
+(N'Suite',4500.00,4,2,60,1500.00,N'Suite with a separate lounge and premium amenities.')
+) src(TypeName,Rate,Capacity,Beds,SizeSqm,Fee,Description)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.RoomTypes t WHERE t.TypeName=src.TypeName);
+UPDATE rm SET rm.BedCount=COALESCE(rm.BedCount,t.BedCount),
+    rm.SizeSqm=COALESCE(rm.SizeSqm,t.SizeSqm),
+    rm.Description=COALESCE(rm.Description,t.Description)
+FROM dbo.Rooms rm INNER JOIN dbo.RoomTypes t ON t.TypeName=rm.RoomType;
+");
             }
         }
 

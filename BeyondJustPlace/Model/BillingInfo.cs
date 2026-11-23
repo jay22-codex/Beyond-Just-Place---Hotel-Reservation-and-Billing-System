@@ -13,6 +13,8 @@
         public string GuestAddress { get; set; }
 
         public string GuestIdType { get; set; }
+        public string GuestIdNumber { get; set; }
+        public decimal DepositPaid { get; set; }
 
         public string RoomNumber { get; set; }
 

@@ -14,6 +14,9 @@ namespace Model
         public string HomeAddress { get; set; }
 
         public string IdType { get; set; }
+        public string IdNumber { get; set; }
+        public bool IdVerified { get; set; }
+        public bool IsActive { get; set; }
 
         public override string ToString()
         {
