@@ -1,4 +1,4 @@
-﻿
+
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -38,6 +38,14 @@ namespace UI
         private GroupBox groupBox2;
 
         private DataGridView dgvCheckInReservations;
+        private Button btnWalkIn;
+        private RichTextBox txtSelectedGuestDetails;
+        private FlowLayoutPanel verificationBar;
+        private Label lblIdentityCheck;
+        private TextBox txtPhysicalId;
+        private CheckBox chkPhysicalIdChecked;
+        private Button btnVerifySelectedId;
+        private CheckBox chkKeysIssued;
         private DataGridViewTextBoxColumn columnGuestname;
         private DataGridViewTextBoxColumn columnRoom;
         private DataGridViewTextBoxColumn columnCheckInDate;
@@ -77,6 +85,14 @@ namespace UI
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.dgvCheckInReservations = new System.Windows.Forms.DataGridView();
+            this.btnWalkIn = new System.Windows.Forms.Button();
+            this.txtSelectedGuestDetails = new System.Windows.Forms.RichTextBox();
+            this.verificationBar = new System.Windows.Forms.FlowLayoutPanel();
+            this.lblIdentityCheck = new System.Windows.Forms.Label();
+            this.txtPhysicalId = new System.Windows.Forms.TextBox();
+            this.chkPhysicalIdChecked = new System.Windows.Forms.CheckBox();
+            this.btnVerifySelectedId = new System.Windows.Forms.Button();
+            this.chkKeysIssued = new System.Windows.Forms.CheckBox();
             this.columnGuestname = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.columnRoom = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.columnCheckInDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -261,10 +277,10 @@ namespace UI
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(1350, 255);
+            this.button1.Location = new System.Drawing.Point(1080, 10);
             this.button1.Name = "button1";
             this.button1.Font = new Font("Arial", 11F, FontStyle.Bold);
-            this.button1.Size = new System.Drawing.Size(225, 56);
+            this.button1.Size = new System.Drawing.Size(178, 40);
             this.button1.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right);
             this.button1.TabIndex = 4;
             this.button1.Text = "Confirm Check-In";
@@ -304,23 +320,85 @@ namespace UI
             this.textBox1.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.textBox1.TabIndex = 1;
             // 
+            // Front Desk ID verification and key handover (always visible)
+            this.verificationBar.Name = "verificationBar";
+            this.verificationBar.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.verificationBar.Height = 72;
+            this.verificationBar.Padding = new System.Windows.Forms.Padding(10, 8, 10, 5);
+            this.verificationBar.WrapContents = false;
+            this.verificationBar.AutoScroll = true;
+            this.verificationBar.BackColor = System.Drawing.Color.FromArgb(237, 235, 249);
+
+            this.lblIdentityCheck.Name = "lblIdentityCheck";
+            this.lblIdentityCheck.Text = "Physical ID number:";
+            this.lblIdentityCheck.AutoSize = false;
+            this.lblIdentityCheck.Size = new System.Drawing.Size(148, 39);
+            this.lblIdentityCheck.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.lblIdentityCheck.Margin = new System.Windows.Forms.Padding(3);
+            this.lblIdentityCheck.Font = new System.Drawing.Font("Arial", 9.5F, System.Drawing.FontStyle.Bold);
+
+            this.txtPhysicalId.Name = "txtPhysicalId";
+            this.txtPhysicalId.Size = new System.Drawing.Size(180, 30);
+            this.txtPhysicalId.Font = new System.Drawing.Font("Arial", 11F);
+            this.txtPhysicalId.Margin = new System.Windows.Forms.Padding(3, 9, 9, 3);
+
+            this.chkPhysicalIdChecked.Name = "chkPhysicalIdChecked";
+            this.chkPhysicalIdChecked.Text = "Physical ID checked";
+            this.chkPhysicalIdChecked.AutoSize = false;
+            this.chkPhysicalIdChecked.Size = new System.Drawing.Size(161, 39);
+            this.chkPhysicalIdChecked.Margin = new System.Windows.Forms.Padding(3);
+
+            this.btnVerifySelectedId.Name = "btnVerifySelectedId";
+            this.btnVerifySelectedId.Text = "Verify Selected ID";
+            this.btnVerifySelectedId.Size = new System.Drawing.Size(170, 40);
+            this.btnVerifySelectedId.BackColor = System.Drawing.Color.FromArgb(128, 128, 255);
+            this.btnVerifySelectedId.UseVisualStyleBackColor = false;
+            this.btnVerifySelectedId.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold);
+            this.btnVerifySelectedId.Margin = new System.Windows.Forms.Padding(8, 3, 12, 3);
+
+            this.chkKeysIssued.Name = "chkKeysIssued";
+            this.chkKeysIssued.Text = "Room key(s) handed over";
+            this.chkKeysIssued.AutoSize = false;
+            this.chkKeysIssued.Size = new System.Drawing.Size(207, 39);
+            this.chkKeysIssued.Margin = new System.Windows.Forms.Padding(5, 3, 12, 3);
+
+            this.button1.Margin = new System.Windows.Forms.Padding(3);
+            this.verificationBar.Controls.Add(this.lblIdentityCheck);
+            this.verificationBar.Controls.Add(this.txtPhysicalId);
+            this.verificationBar.Controls.Add(this.chkPhysicalIdChecked);
+            this.verificationBar.Controls.Add(this.btnVerifySelectedId);
+            this.verificationBar.Controls.Add(this.chkKeysIssued);
+            this.verificationBar.Controls.Add(this.button1);
+
             // groupBox4
             // 
             this.groupBox4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.groupBox4.Controls.Add(this.label1);
             this.groupBox4.Controls.Add(this.txtCheckInGuest);
             this.groupBox4.Controls.Add(this.btnSearchCheckIn);
+            this.groupBox4.Controls.Add(this.btnWalkIn);
             this.groupBox4.Controls.Add(this.dgvCheckInReservations);
-            this.groupBox4.Controls.Add(this.button1);
+            this.groupBox4.Controls.Add(this.txtSelectedGuestDetails);
+            this.groupBox4.Controls.Add(this.verificationBar);
             this.groupBox4.Font = new System.Drawing.Font("Arial", 11F);
             this.groupBox4.Location = new System.Drawing.Point(18, 73);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(1623, 357);
+            this.groupBox4.Size = new System.Drawing.Size(1623, 514);
             this.groupBox4.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.groupBox4.TabIndex = 2;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Check-In";
             // 
+            // Separate form for on-site guests, not the existing online reservation process.
+            this.btnWalkIn.Name = "btnWalkIn";
+            this.btnWalkIn.Text = "New Walk-In Check-In";
+            this.btnWalkIn.Font = new Font("Arial", 10F, FontStyle.Bold);
+            this.btnWalkIn.BackColor = Color.Gainsboro;
+            this.btnWalkIn.Location = new Point(1310, 39);
+            this.btnWalkIn.Size = new Size(260, 40);
+            this.btnWalkIn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            this.btnWalkIn.UseVisualStyleBackColor = false;
+
             // dgvCheckInReservations
             // 
             this.dgvCheckInReservations.AllowUserToAddRows = false;
@@ -336,9 +414,10 @@ namespace UI
             this.dgvCheckInReservations.MultiSelect = false;
             this.dgvCheckInReservations.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             this.dgvCheckInReservations.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            this.dgvCheckInReservations.RowHeadersVisible = false;
             this.dgvCheckInReservations.RowTemplate.Height = 30;
             this.dgvCheckInReservations.ColumnHeadersHeight = 35;
-            this.dgvCheckInReservations.Size = new System.Drawing.Size(1250, 210);
+            this.dgvCheckInReservations.Size = new System.Drawing.Size(1540, 198);
             this.dgvCheckInReservations.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.dgvCheckInReservations.TabIndex = 3;
             // 
@@ -362,6 +441,15 @@ namespace UI
             this.columnStatus.HeaderText = "Status";
             this.columnStatus.Name = "columnStatus";
             // 
+            // Selected guest information automatically follows the highlighted row.
+            this.txtSelectedGuestDetails.Name = "txtSelectedGuestDetails";
+            this.txtSelectedGuestDetails.SetBounds(32, 322, 1540, 114);
+            this.txtSelectedGuestDetails.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            this.txtSelectedGuestDetails.ReadOnly = true;
+            this.txtSelectedGuestDetails.BackColor = Color.White;
+            this.txtSelectedGuestDetails.Font = new Font("Consolas", 10F);
+            this.txtSelectedGuestDetails.Text = "Select a guest reservation above to display booking and ID information.";
+
             // groupBox1
             // 
             this.groupBox1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
@@ -377,7 +465,7 @@ namespace UI
             this.groupBox1.Controls.Add(this.groupBox2);
             this.groupBox1.Controls.Add(this.btnCheckOut);
             this.groupBox1.Font = new System.Drawing.Font("Arial", 11F);
-            this.groupBox1.Location = new System.Drawing.Point(18, 446);
+            this.groupBox1.Location = new System.Drawing.Point(18, 604);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(1623, 463);
             this.groupBox1.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
@@ -407,7 +495,7 @@ namespace UI
             // 
             this.AutoScroll = true;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.ClientSize = new System.Drawing.Size(1660, 930);
+            this.ClientSize = new System.Drawing.Size(1660, 1050);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox1);

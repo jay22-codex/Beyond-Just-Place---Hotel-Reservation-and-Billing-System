@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[Rooms]
+﻿CREATE TABLE [dbo].[Rooms]
 (
     [RoomId] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Rooms] PRIMARY KEY,
     [RoomNumber] NVARCHAR(20) NOT NULL,
@@ -7,6 +7,10 @@ CREATE TABLE [dbo].[Rooms]
     [RoomStatus] NVARCHAR(30) NOT NULL CONSTRAINT [DF_Rooms_Status] DEFAULT N'Available',
     [RoomCapacity] INT NULL,
     [ReservationFee] DECIMAL(18,2) NULL,
+    [BedCount] INT NULL,
+    [SizeSqm] INT NULL,
+    [Description] NVARCHAR(500) NULL,
+    [IsActive] BIT NOT NULL CONSTRAINT [DF_Rooms_IsActive] DEFAULT 1,
     [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [DF_Rooms_CreatedAt] DEFAULT SYSDATETIME()
 );
 GO

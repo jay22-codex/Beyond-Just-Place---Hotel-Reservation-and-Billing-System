@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -192,7 +192,7 @@ namespace UI
             if (billing == null)
             {
                 MessageBox.Show(
-                    "Please select a checked-in guest first.");
+                    "Please select a checked-in guest first.", "Beyond Just Place");
                 return;
             }
 

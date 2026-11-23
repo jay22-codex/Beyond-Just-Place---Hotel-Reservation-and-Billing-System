@@ -14,6 +14,9 @@ namespace BusinessLogic
         public string RoomType { get; set; }
         public decimal RoomRate { get; set; }
         public int? RoomCapacity { get; set; }
+        public int BedCount { get; set; }
+        public int SizeSqm { get; set; }
+        public string Description { get; set; }
         public decimal? ReservationFee { get; set; }
     }
 
@@ -26,7 +29,7 @@ namespace BusinessLogic
             using (SqlConnection connection = new SqlConnection(connectionString))
             using (SqlCommand cmd = new SqlCommand(
                 @"SELECT GuestId, GuestName, ContactNumber,
-                         Email, HomeAddress, IdType
+                         Email, HomeAddress, IdType,IdNumber,IdVerified,IsActive
                   FROM dbo.Guests
                   WHERE GuestId = @id", connection))
             {
@@ -44,7 +47,10 @@ namespace BusinessLogic
                         ContactNumber = Convert.ToString(reader["ContactNumber"]),
                         Email = Convert.ToString(reader["Email"]),
                         HomeAddress = Convert.ToString(reader["HomeAddress"]),
-                        IdType = Convert.ToString(reader["IdType"])
+                        IdType = Convert.ToString(reader["IdType"]),
+                        IdNumber = Convert.ToString(reader["IdNumber"]),
+                        IdVerified = Convert.ToBoolean(reader["IdVerified"]),
+                        IsActive = Convert.ToBoolean(reader["IsActive"])
                     };
                 }
             }
@@ -62,22 +68,24 @@ namespace BusinessLogic
                 guest.ContactNumber.Trim().Length > 50 ||
                 (guest.Email ?? "").Length > 254 ||
                 (guest.HomeAddress ?? "").Length > 500 ||
-                (guest.IdType ?? "").Length > 50)
+                (guest.IdType ?? "").Length > 50 || (guest.IdNumber ?? "").Length > 100)
                 throw new InvalidOperationException(
                     "One of the guest fields is too long.");
 
             string sql = guest.GuestId == 0
                 ? @"INSERT INTO dbo.Guests
-                    (GuestName, ContactNumber, Email, HomeAddress, IdType)
+                    (GuestName, ContactNumber, Email, HomeAddress, IdType,IdNumber)
                     OUTPUT INSERTED.GuestId
-                    VALUES (@name, @contact, @email, @address, @idType)"
+                    VALUES (@name, @contact, @email, @address, @idType,@idNumber)"
                 : @"UPDATE dbo.Guests
                     SET GuestName = @name,
                         ContactNumber = @contact,
                         Email = @email,
                         HomeAddress = @address,
-                        IdType = @idType
-                    WHERE GuestId = @id";
+                        IdType = @idType,
+                        IdNumber = @idNumber,
+                        IdVerified = CASE WHEN ISNULL(IdNumber,N'')=ISNULL(@idNumber,N'') THEN IdVerified ELSE 0 END
+                    WHERE GuestId = @id AND IsActive=1";
 
             using (SqlConnection connection = new SqlConnection(connectionString))
             using (SqlCommand cmd = new SqlCommand(sql, connection))
@@ -87,6 +95,7 @@ namespace BusinessLogic
                 cmd.Parameters.Add("@email", SqlDbType.NVarChar, 254).Value = NullIfEmpty(guest.Email);
                 cmd.Parameters.Add("@address", SqlDbType.NVarChar, 500).Value = NullIfEmpty(guest.HomeAddress);
                 cmd.Parameters.Add("@idType", SqlDbType.NVarChar, 50).Value = NullIfEmpty(guest.IdType);
+                cmd.Parameters.Add("@idNumber",SqlDbType.NVarChar,100).Value=NullIfEmpty(guest.IdNumber);
 
                 connection.Open();
 
@@ -123,10 +132,13 @@ namespace BusinessLogic
             using (SqlConnection connection = new SqlConnection(connectionString))
             using (SqlCommand cmd = new SqlCommand(
                 @"SELECT rm.RoomId, rm.RoomNumber, rm.RoomType,
-                         rm.RoomRate, rm.RoomCapacity, rm.ReservationFee
+                         rm.RoomRate, rm.RoomCapacity, rm.ReservationFee,
+                         rm.BedCount,rm.SizeSqm,rm.Description
                   FROM dbo.Rooms rm
                   WHERE rm.RoomType = @type
                     AND ISNULL(rm.RoomStatus, N'Available') = N'Available'
+                    AND rm.IsActive=1
+                    AND EXISTS(SELECT 1 FROM dbo.RoomTypes rt WHERE rt.TypeName=rm.RoomType AND rt.IsActive=1)
                     AND NOT EXISTS
                     (
                         SELECT 1
@@ -176,7 +188,10 @@ namespace BusinessLogic
                             RoomCapacity = reader["RoomCapacity"] == DBNull.Value
                                 ? (int?)null : Convert.ToInt32(reader["RoomCapacity"]),
                             ReservationFee = reader["ReservationFee"] == DBNull.Value
-                                ? (decimal?)null : Convert.ToDecimal(reader["ReservationFee"])
+                                ? (decimal?)null : Convert.ToDecimal(reader["ReservationFee"]),
+                            BedCount=reader["BedCount"]==DBNull.Value?0:Convert.ToInt32(reader["BedCount"]),
+                            SizeSqm=reader["SizeSqm"]==DBNull.Value?0:Convert.ToInt32(reader["SizeSqm"]),
+                            Description=Convert.ToString(reader["Description"])
                         });
                     }
                 }
@@ -253,6 +268,16 @@ namespace BusinessLogic
                 {
                     try
                     {
+                        using (SqlCommand checkGuest = new SqlCommand(
+                            "SELECT COUNT(*) FROM dbo.Guests WHERE GuestId=@id AND IsActive=1",
+                            connection, transaction))
+                        {
+                            checkGuest.Parameters.Add("@id", SqlDbType.Int).Value = guestId;
+                            if (Convert.ToInt32(checkGuest.ExecuteScalar()) != 1)
+                                throw new InvalidOperationException(
+                                    "The selected guest is inactive or no longer exists. Select an active guest.");
+                        }
+
                         List<AvailableRoomInfo> confirmedRooms =
                             new List<AvailableRoomInfo>();
 
@@ -280,7 +305,10 @@ namespace BusinessLogic
                         }
 
                         bool allCapacitiesKnown =
-                            confirmedRooms.All(r => r.RoomCapacity.HasValue);
+                            confirmedRooms.All(r => r.RoomCapacity.HasValue && r.RoomCapacity.Value > 0);
+
+                        if (!allCapacitiesKnown)
+                            throw new InvalidOperationException("One or more selected rooms have no capacity set. Ask Admin to configure them.");
 
                         if (allCapacitiesKnown)
                         {
@@ -388,9 +416,10 @@ namespace BusinessLogic
         {
             using (SqlCommand read = new SqlCommand(
                 @"SELECT RoomId, RoomNumber, RoomType, RoomRate,
-                         RoomCapacity, ReservationFee, RoomStatus
+                         RoomCapacity, ReservationFee, RoomStatus,BedCount,SizeSqm,Description
                   FROM dbo.Rooms WITH (UPDLOCK, HOLDLOCK)
-                  WHERE RoomId = @roomId", connection, transaction))
+                  WHERE RoomId = @roomId AND IsActive=1
+                    AND EXISTS(SELECT 1 FROM dbo.RoomTypes t WHERE t.TypeName=dbo.Rooms.RoomType AND t.IsActive=1)", connection, transaction))
             {
                 read.Parameters.Add("@roomId", SqlDbType.Int).Value = roomId;
 
@@ -414,7 +443,10 @@ namespace BusinessLogic
                         RoomCapacity = reader["RoomCapacity"] == DBNull.Value
                             ? (int?)null : Convert.ToInt32(reader["RoomCapacity"]),
                         ReservationFee = reader["ReservationFee"] == DBNull.Value
-                            ? (decimal?)null : Convert.ToDecimal(reader["ReservationFee"])
+                            ? (decimal?)null : Convert.ToDecimal(reader["ReservationFee"]),
+                        BedCount=reader["BedCount"]==DBNull.Value?0:Convert.ToInt32(reader["BedCount"]),
+                        SizeSqm=reader["SizeSqm"]==DBNull.Value?0:Convert.ToInt32(reader["SizeSqm"]),
+                        Description=Convert.ToString(reader["Description"])
                     };
                 }
             }

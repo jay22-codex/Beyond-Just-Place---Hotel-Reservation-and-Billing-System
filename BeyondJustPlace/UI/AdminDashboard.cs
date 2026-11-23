@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -21,11 +21,18 @@ namespace UI
 
             btnDashboard.Click -= BtnDashboard_Click;
             btnDashboard.Click += BtnDashboard_Click;
+            btnRoomTypes.Click += (s,e)=>{if(!CurrentUserSession.RequireAdmin(this))return;
+                using(RoomTypeManagerForm form=new RoomTypeManagerForm())form.ShowDialog(this);};
+            btnGuestRecords.Click += (s,e)=>{if(!CurrentUserSession.RequireAdmin(this))return;
+                using(GuestMaintenanceForm form=new GuestMaintenanceForm())form.ShowDialog(this);};
+            btnAvailability.Click += (s,e)=>ShowAvailability();
+            try { this.Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
             button1.Click -= ManageRooms_Click;
             button1.Click += ManageRooms_Click;
             button2.Click -= ManageUsers_Click;
             button2.Click += ManageUsers_Click;
+            button3.Text = "View Reservations (Read Only)";
             button3.Click -= ViewReservations_Click;
             button3.Click += ViewReservations_Click;
             button4.Click -= ViewBillingRecords_Click;
@@ -98,7 +105,7 @@ namespace UI
 
         private void ViewReservations_Click(object sender, EventArgs e)
         {
-            ShowReadOnlyTable("Reservation Records", adminService.GetReservations());
+            ShowReservationManager();
         }
 
         private void ViewBillingRecords_Click(object sender, EventArgs e)
@@ -106,8 +113,35 @@ namespace UI
             ShowReadOnlyTable("Billing Records", adminService.GetPayments());
         }
 
+        private void ShowReservationManager()
+        {
+            // Administration may inspect reservation records but cannot verify
+            // guest identity, confirm/cancel bookings, or verify payments.
+            // All of those actions are on Front Desk screens.
+            ShowReadOnlyTable("Reservation Records - Read Only", adminService.GetReservations());
+        }
+
+        private void ShowAvailability()
+        {
+            using(Form form=CreateDialog("Room Availability",1050,680))
+            {
+                DateTimePicker date=new DateTimePicker{Dock=DockStyle.Top,Format=DateTimePickerFormat.Long,Height=37};
+                DataGridView grid=CreateGrid();
+                Button refresh=CreateActionButton("Refresh Date");
+                FlowLayoutPanel actions=CreateActionBar();
+                actions.Controls.Add(refresh);
+                Action load=()=>{grid.DataSource=new HotelEnhancementService().GetAvailabilityForDate(date.Value);};
+                date.ValueChanged+=(s,e)=>{try{load();}catch(Exception ex){ShowAdminError(ex);}};
+                refresh.Click+=(s,e)=>{try{load();}catch(Exception ex){ShowAdminError(ex);}};
+                form.Controls.Add(grid);form.Controls.Add(actions);form.Controls.Add(date);
+                try{load();}catch(Exception ex){ShowAdminError(ex);}
+                form.ShowDialog(this);
+            }
+        }
+
         private void ShowRoomManager()
         {
+            if (!CurrentUserSession.RequireAdmin(this)) return;
             Form form = CreateDialog("Manage Rooms", 1050, 620);
             DataGridView grid = CreateGrid();
             grid.Dock = DockStyle.Fill;
@@ -115,7 +149,7 @@ namespace UI
             FlowLayoutPanel actions = CreateActionBar();
             Button add = CreateActionButton("Add Room");
             Button edit = CreateActionButton("Edit Selected");
-            Button delete = CreateActionButton("Delete Selected");
+            Button delete = CreateActionButton("Activate / Deactivate");
             Button refresh = CreateActionButton("Refresh");
             Button close = CreateActionButton("Close");
             actions.Controls.AddRange(new Control[] { add, edit, delete, refresh, close });
@@ -123,22 +157,26 @@ namespace UI
             form.Controls.Add(grid);
             form.Controls.Add(actions);
 
-            Action load = () => grid.DataSource = adminService.GetRooms();
+            Action load = () => {grid.DataSource = adminService.GetRooms();
+                if(grid.Columns.Contains("RoomId"))grid.Columns["RoomId"].Visible=false;
+                if(grid.Columns.Contains("Description"))grid.Columns["Description"].Visible=false;
+                if(grid.Columns.Contains("SizeSqm"))grid.Columns["SizeSqm"].Visible=false;};
             add.Click += (s, e) =>
             {
                 RoomEditorData data = ShowRoomEditor(null);
                 if (data == null) return;
                 try
                 {
-                    adminService.AddRoom(data.RoomNumber, data.RoomType, data.Rate,
+                    int roomId=adminService.AddRoom(data.RoomNumber, data.RoomType, data.Rate,
                         data.Capacity, data.ReservationFee, data.Status);
+                    new HotelEnhancementService().SetRoomDetails(roomId,data.BedCount,data.SizeSqm,data.Description);
                     load(); RefreshDashboard(false);
                 }
                 catch (Exception ex) { ShowAdminError(ex); }
             };
             edit.Click += (s, e) =>
             {
-                if (grid.CurrentRow == null) { MessageBox.Show("Select a room first."); return; }
+                if (grid.CurrentRow == null) { MessageBox.Show("Select a room first.", "Beyond Just Place"); return; }
                 DataRowView view = grid.CurrentRow.DataBoundItem as DataRowView;
                 if (view == null) return;
                 RoomEditorData existing = new RoomEditorData
@@ -149,7 +187,11 @@ namespace UI
                     Rate = Convert.ToDecimal(view["RoomRate"]),
                     Capacity = view["RoomCapacity"] == DBNull.Value ? 1 : Convert.ToInt32(view["RoomCapacity"]),
                     ReservationFee = view["ReservationFee"] == DBNull.Value ? 0m : Convert.ToDecimal(view["ReservationFee"]),
-                    Status = Convert.ToString(view["RoomStatus"])
+                    Status = Convert.ToString(view["RoomStatus"]),
+                    BedCount=view["BedCount"]==DBNull.Value?1:Convert.ToInt32(view["BedCount"]),
+                    SizeSqm=view["SizeSqm"]==DBNull.Value?24:Convert.ToInt32(view["SizeSqm"]),
+                    Description=Convert.ToString(view["Description"]),
+                    IsActive=Convert.ToBoolean(view["IsActive"])
                 };
                 RoomEditorData data = ShowRoomEditor(existing);
                 if (data == null) return;
@@ -157,20 +199,22 @@ namespace UI
                 {
                     adminService.UpdateRoom(existing.RoomId, data.RoomNumber, data.RoomType,
                         data.Rate, data.Capacity, data.ReservationFee, data.Status);
+                    new HotelEnhancementService().SetRoomDetails(existing.RoomId,data.BedCount,data.SizeSqm,data.Description);
                     load(); RefreshDashboard(false);
                 }
                 catch (Exception ex) { ShowAdminError(ex); }
             };
             delete.Click += (s, e) =>
             {
-                if (grid.CurrentRow == null) { MessageBox.Show("Select a room first."); return; }
+                if (grid.CurrentRow == null) { MessageBox.Show("Select a room first.", "Beyond Just Place"); return; }
                 DataRowView view = grid.CurrentRow.DataBoundItem as DataRowView;
                 if (view == null) return;
-                if (MessageBox.Show("Delete room " + view["RoomNumber"] + "?", "Delete Room",
+                bool wasActive=Convert.ToBoolean(view["IsActive"]);
+                if (MessageBox.Show((wasActive?"Deactivate ":"Reactivate ")+"room " + view["RoomNumber"] + "?", "Room Status",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
                 try
                 {
-                    adminService.DeleteRoom(Convert.ToInt32(view["RoomId"]));
+                    new HotelEnhancementService().SetRoomActive(Convert.ToInt32(view["RoomId"]),!wasActive);
                     load(); RefreshDashboard(false);
                 }
                 catch (Exception ex) { ShowAdminError(ex); }
@@ -183,6 +227,7 @@ namespace UI
 
         private void ShowUserManager()
         {
+            if (!CurrentUserSession.RequireAdmin(this)) return;
             Form form = CreateDialog("Manage Users", 850, 560);
             DataGridView grid = CreateGrid();
             grid.Dock = DockStyle.Fill;
@@ -190,13 +235,14 @@ namespace UI
             FlowLayoutPanel actions = CreateActionBar();
             Button add = CreateActionButton("Add User");
             Button edit = CreateActionButton("Edit Selected");
-            Button delete = CreateActionButton("Delete Selected");
+            Button delete = CreateActionButton("Activate / Deactivate");
             Button refresh = CreateActionButton("Refresh");
             Button close = CreateActionButton("Close");
             actions.Controls.AddRange(new Control[] { add, edit, delete, refresh, close });
             form.Controls.Add(grid); form.Controls.Add(actions);
 
-            Action load = () => grid.DataSource = adminService.GetUsers();
+            Action load = () => {grid.DataSource = adminService.GetUsers();
+                if(grid.Columns.Contains("UserId"))grid.Columns["UserId"].Visible=false;};
             add.Click += (s, e) =>
             {
                 UserEditorData data = ShowUserEditor(null);
@@ -206,7 +252,7 @@ namespace UI
             };
             edit.Click += (s, e) =>
             {
-                if (grid.CurrentRow == null) { MessageBox.Show("Select a user first."); return; }
+                if (grid.CurrentRow == null) { MessageBox.Show("Select a user first.", "Beyond Just Place"); return; }
                 DataRowView view = grid.CurrentRow.DataBoundItem as DataRowView;
                 if (view == null) return;
                 UserEditorData existing = new UserEditorData
@@ -222,12 +268,13 @@ namespace UI
             };
             delete.Click += (s, e) =>
             {
-                if (grid.CurrentRow == null) { MessageBox.Show("Select a user first."); return; }
+                if (grid.CurrentRow == null) { MessageBox.Show("Select a user first.", "Beyond Just Place"); return; }
                 DataRowView view = grid.CurrentRow.DataBoundItem as DataRowView;
                 if (view == null) return;
-                if (MessageBox.Show("Delete user " + view["Username"] + "?", "Delete User",
+                bool wasActive=Convert.ToBoolean(view["IsActive"]);
+                if (MessageBox.Show((wasActive?"Deactivate ":"Reactivate ")+"user " + view["Username"] + "?", "User Status",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
-                try { adminService.DeleteUser(Convert.ToInt32(view["UserId"])); load(); }
+                try { new HotelEnhancementService().SetUserActive(Convert.ToInt32(view["UserId"]),!wasActive,CurrentUserSession.Username); load(); }
                 catch (Exception ex) { ShowAdminError(ex); }
             };
             refresh.Click += (s, e) => load();
@@ -238,10 +285,16 @@ namespace UI
 
         private RoomEditorData ShowRoomEditor(RoomEditorData existing)
         {
-            Form form = CreateDialog(existing == null ? "Add Room" : "Edit Room", 500, 420);
-            TableLayoutPanel table = CreateEditorTable(6);
+            Form form = CreateDialog(existing == null ? "Add Room" : "Edit Room", 550, 650);
+            TableLayoutPanel table = CreateEditorTable(9);
             TextBox number = AddEditorText(table, 0, "Room Number:", existing == null ? "" : existing.RoomNumber);
-            TextBox type = AddEditorText(table, 1, "Room Type:", existing == null ? "" : existing.RoomType);
+            ComboBox type = new ComboBox{Dock=DockStyle.Fill,DropDownStyle=ComboBoxStyle.DropDownList,Font=new Font("Arial",11F)};
+            DataTable types=new HotelEnhancementService().GetRoomTypes(true);
+            foreach(DataRow r in types.Rows)
+                if(Convert.ToBoolean(r["IsActive"]) || (existing!=null && Convert.ToString(r["TypeName"])==existing.RoomType))
+                    type.Items.Add(Convert.ToString(r["TypeName"]));
+            if(existing!=null)type.SelectedItem=existing.RoomType;
+            AddEditorControl(table,1,"Room Type:",type);
             NumericUpDown rate = AddEditorMoney(table, 2, "Room Rate:", existing == null ? 0m : existing.Rate);
             NumericUpDown capacity = AddEditorNumber(table, 3, "Capacity:", existing == null ? 2 : existing.Capacity);
             NumericUpDown fee = AddEditorMoney(table, 4, "Reservation Fee:", existing == null ? 0m : existing.ReservationFee);
@@ -249,6 +302,9 @@ namespace UI
             status.Items.AddRange(new object[] { "Available", "Maintenance", "Unavailable" });
             status.SelectedItem = existing == null ? "Available" : existing.Status;
             AddEditorControl(table, 5, "Status:", status);
+            NumericUpDown beds=AddEditorNumber(table,6,"Number of Beds:",existing==null?1:existing.BedCount);
+            NumericUpDown size=AddEditorNumber(table,7,"Size (sqm):",existing==null?24:existing.SizeSqm);
+            TextBox description=AddEditorText(table,8,"Description:",existing==null?"":existing.Description);
 
             FlowLayoutPanel actions = CreateActionBar();
             Button save = CreateActionButton("Save");
@@ -262,7 +318,9 @@ namespace UI
                 {
                     RoomNumber = number.Text.Trim(), RoomType = type.Text.Trim(),
                     Rate = rate.Value, Capacity = Convert.ToInt32(capacity.Value),
-                    ReservationFee = fee.Value, Status = Convert.ToString(status.SelectedItem)
+                    ReservationFee = fee.Value, Status = Convert.ToString(status.SelectedItem),
+                    BedCount=Convert.ToInt32(beds.Value),SizeSqm=Convert.ToInt32(size.Value),
+                    Description=description.Text.Trim()
                 };
                 form.DialogResult = DialogResult.OK; form.Close();
             };
@@ -306,6 +364,16 @@ namespace UI
             Form form = CreateDialog(title, 1200, 680);
             DataGridView grid = CreateGrid();
             grid.ReadOnly = true; grid.DataSource = table; grid.Dock = DockStyle.Fill;
+            if(title.StartsWith("Reservation Records",StringComparison.Ordinal))
+            {
+                string[] keep={"ReservationId","GuestName","RoomNumber","RoomCount",
+                    "NumberOfGuests","CheckInDate","CheckOutDate","ReservationStatus",
+                    "ReservationFeeAmount","ReservationFeeStatus"};
+                foreach(DataGridViewColumn column in grid.Columns)
+                    column.Visible=Array.IndexOf(keep,column.Name)>=0;
+                if(grid.Columns.Contains("ReservationId"))
+                    grid.Columns["ReservationId"].HeaderText="Booking #";
+            }
             FlowLayoutPanel actions = CreateActionBar();
             Button close = CreateActionButton("Close");
             actions.Controls.Add(close); close.Click += (s, e) => form.Close();
@@ -331,7 +399,12 @@ namespace UI
                 ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false,
                 MultiSelect = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                BackgroundColor = Color.FromArgb(224, 224, 224),
+                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
+                RowHeadersVisible = false,
+                RowTemplate = { Height = 30 },
+                ColumnHeadersHeight = 38,
+                BackgroundColor = Color.White,
+                AlternatingRowsDefaultCellStyle = { BackColor = Color.FromArgb(246, 245, 252) },
                 Dock = DockStyle.Fill
             };
         }
@@ -428,6 +501,10 @@ namespace UI
             public int Capacity { get; set; }
             public decimal ReservationFee { get; set; }
             public string Status { get; set; }
+            public int BedCount { get; set; }
+            public int SizeSqm { get; set; }
+            public string Description { get; set; }
+            public bool IsActive { get; set; }
         }
 
         private sealed class UserEditorData

@@ -22,8 +22,8 @@ namespace BusinessLogic.Repository
                 string query =
                     @"SELECT GuestId, GuestName, ContactNumber
                       FROM dbo.Guests
-                      WHERE GuestName LIKE @keyword
-                      OR ContactNumber LIKE @keyword
+                      WHERE IsActive=1
+                        AND (GuestName LIKE @keyword OR ContactNumber LIKE @keyword)
                       ORDER BY GuestName";
 
                 SqlCommand command =
@@ -99,9 +99,8 @@ namespace BusinessLogic.Repository
                 connection.Open();
 
                 string query =
-                    @"SELECT DISTINCT RoomType
-                      FROM dbo.Rooms
-                      ORDER BY RoomType";
+                    @"SELECT TypeName AS RoomType FROM dbo.RoomTypes
+                      WHERE IsActive=1 ORDER BY TypeName";
 
                 SqlCommand command =
                     new SqlCommand(query, connection);

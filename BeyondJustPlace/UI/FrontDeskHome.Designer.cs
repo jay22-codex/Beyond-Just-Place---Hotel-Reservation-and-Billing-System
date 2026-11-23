@@ -1,4 +1,4 @@
-﻿
+
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -20,7 +20,9 @@ namespace UI
         private GroupBox groupBox3;
         private GroupBox groupBox4;
 
-        private ListBox listBox1;
+        private DataGridView dgvRecentReservations;
+        private TextBox txtDashboardSearch;
+        private Panel dashboardTableHeader;
 
         protected override void Dispose(bool disposing)
         {
@@ -44,7 +46,9 @@ namespace UI
             this.groupBox3 = new GroupBox();
             this.groupBox4 = new GroupBox();
 
-            this.listBox1 = new ListBox();
+            this.dgvRecentReservations = new DataGridView();
+            this.txtDashboardSearch = new TextBox();
+            this.dashboardTableHeader = new Panel();
 
             this.SuspendLayout();
 
@@ -131,7 +135,7 @@ namespace UI
             this.groupBox3.Controls.Add(this.label6);
 
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Text = "Latest Activity";
+            this.groupBox4.Text = "Reservation Table - Guest and Room Information";
             this.groupBox4.Font = new Font("Arial", 11F, FontStyle.Bold);
             this.groupBox4.Location = new System.Drawing.Point(26, 280);
             this.groupBox4.Size = new System.Drawing.Size(1597, 624);
@@ -139,13 +143,36 @@ namespace UI
             this.groupBox4.BackColor = Color.FromArgb(128, 128, 255);
             this.Controls.Add(this.groupBox4);
 
-            this.listBox1.Name = "listBox1";
-            this.listBox1.Location = new System.Drawing.Point(23, 38);
-            this.listBox1.Size = new System.Drawing.Size(1547, 560);
-            this.listBox1.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
-            this.listBox1.Font = new Font("Arial", 11F);
-            this.listBox1.BackColor = Color.FromArgb(240, 240, 240);
-            this.groupBox4.Controls.Add(this.listBox1);
+            this.dashboardTableHeader.Name = "dashboardTableHeader";
+            this.dashboardTableHeader.Dock = DockStyle.Top;
+            this.dashboardTableHeader.Height = 57;
+            this.dashboardTableHeader.Padding = new Padding(16, 9, 16, 9);
+            this.dashboardTableHeader.BackColor = Color.FromArgb(230, 228, 248);
+            Label lookup = new Label { Text = "Find guest, booking #, room, or phone:",
+                Location = new Point(17, 17), Size = new Size(360, 26),
+                Font = new Font("Arial", 10F, FontStyle.Bold) };
+            this.txtDashboardSearch.Name = "txtDashboardSearch";
+            this.txtDashboardSearch.Location = new Point(385, 13);
+            this.txtDashboardSearch.Size = new Size(520, 32);
+            this.txtDashboardSearch.Font = new Font("Arial", 11F);
+            this.dashboardTableHeader.Controls.Add(lookup);
+            this.dashboardTableHeader.Controls.Add(this.txtDashboardSearch);
+
+            this.dgvRecentReservations.Name = "dgvRecentReservations";
+            this.dgvRecentReservations.Dock = DockStyle.Fill;
+            this.dgvRecentReservations.BackgroundColor = Color.White;
+            this.dgvRecentReservations.AllowUserToAddRows = false;
+            this.dgvRecentReservations.AllowUserToDeleteRows = false;
+            this.dgvRecentReservations.ReadOnly = true;
+            this.dgvRecentReservations.MultiSelect = false;
+            this.dgvRecentReservations.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            this.dgvRecentReservations.RowHeadersVisible = false;
+            this.dgvRecentReservations.ColumnHeadersHeight = 36;
+            this.dgvRecentReservations.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            this.dgvRecentReservations.Font = new Font("Arial", 10F);
+            this.groupBox4.Padding = new Padding(20, 29, 20, 15);
+            this.groupBox4.Controls.Add(this.dgvRecentReservations);
+            this.groupBox4.Controls.Add(this.dashboardTableHeader);
 
             this.ResumeLayout(false);
             this.PerformLayout();

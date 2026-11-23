@@ -1,4 +1,4 @@
-﻿namespace UI
+namespace UI
 {
     partial class FrontDesk_Billing_PaymentUI
     {
@@ -90,7 +90,7 @@
             // groupBox2
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Location = new System.Drawing.Point(18, 38);
-            this.groupBox2.Size = new System.Drawing.Size(1584, 295);
+            this.groupBox2.Size = new System.Drawing.Size(1584, 260);
             this.groupBox2.Font = new System.Drawing.Font("Arial", 13F, System.Drawing.FontStyle.Regular);
             this.groupBox2.BackColor = System.Drawing.Color.FromArgb(128, 128, 255);
             this.groupBox2.TabStop = false;

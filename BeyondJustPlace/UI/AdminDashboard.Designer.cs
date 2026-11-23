@@ -30,6 +30,9 @@
         {
             this.splitter1 = new System.Windows.Forms.Splitter();
             this.btnDashboard = new System.Windows.Forms.Button();
+            this.btnRoomTypes = new System.Windows.Forms.Button();
+            this.btnGuestRecords = new System.Windows.Forms.Button();
+            this.btnAvailability = new System.Windows.Forms.Button();
             this.btnLogin = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.lblRole = new System.Windows.Forms.Label();
@@ -75,6 +78,30 @@
             this.btnDashboard.TabIndex = 4;
             this.btnDashboard.Text = "Dashboard";
             this.btnDashboard.UseVisualStyleBackColor = true;
+            // 
+            // Additional Admin navigation: same purple-and-gray design
+            // 
+            this.btnRoomTypes.Font = new System.Drawing.Font("Arial", 11F, System.Drawing.FontStyle.Bold);
+            this.btnRoomTypes.Location = new System.Drawing.Point(15, 137);
+            this.btnRoomTypes.Name = "btnRoomTypes";
+            this.btnRoomTypes.Size = new System.Drawing.Size(194, 47);
+            this.btnRoomTypes.TabIndex = 21;
+            this.btnRoomTypes.Text = "Room Type Setup";
+            this.btnRoomTypes.UseVisualStyleBackColor = true;
+            this.btnGuestRecords.Font = new System.Drawing.Font("Arial", 11F, System.Drawing.FontStyle.Bold);
+            this.btnGuestRecords.Location = new System.Drawing.Point(15, 197);
+            this.btnGuestRecords.Name = "btnGuestRecords";
+            this.btnGuestRecords.Size = new System.Drawing.Size(194, 47);
+            this.btnGuestRecords.TabIndex = 22;
+            this.btnGuestRecords.Text = "Guest Maintenance";
+            this.btnGuestRecords.UseVisualStyleBackColor = true;
+            this.btnAvailability.Font = new System.Drawing.Font("Arial", 11F, System.Drawing.FontStyle.Bold);
+            this.btnAvailability.Location = new System.Drawing.Point(15, 257);
+            this.btnAvailability.Name = "btnAvailability";
+            this.btnAvailability.Size = new System.Drawing.Size(194, 47);
+            this.btnAvailability.TabIndex = 23;
+            this.btnAvailability.Text = "Availability View";
+            this.btnAvailability.UseVisualStyleBackColor = true;
             // 
             // btnLogin
             // 
@@ -320,9 +347,12 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.btnLogin);
             this.Controls.Add(this.btnDashboard);
+            this.Controls.Add(this.btnRoomTypes);
+            this.Controls.Add(this.btnGuestRecords);
+            this.Controls.Add(this.btnAvailability);
             this.Controls.Add(this.splitter1);
             this.Name = "AdminDashboard";
-            this.Text = "AdminDashboard";
+            this.Text = "Beyond Just Place - Admin Dashboard";
             this.Load += new System.EventHandler(this.AdminDashboard_Load);
             this.groupBoxTotalReservation.ResumeLayout(false);
             this.groupBoxTotalReservation.PerformLayout();
@@ -343,6 +373,9 @@
 
         private System.Windows.Forms.Splitter splitter1;
         private System.Windows.Forms.Button btnDashboard;
+        private System.Windows.Forms.Button btnRoomTypes;
+        private System.Windows.Forms.Button btnGuestRecords;
+        private System.Windows.Forms.Button btnAvailability;
         private System.Windows.Forms.Button btnLogin;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label lblRole;

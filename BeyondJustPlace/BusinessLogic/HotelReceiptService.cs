@@ -56,6 +56,7 @@ namespace BusinessLogic
             Row(html, "Email", billing.GuestEmail, "Check-In", DateValue(billing.CheckInDate));
             Row(html, "Address", billing.GuestAddress, "Check-Out", DateValue(billing.CheckOutDate));
             Row(html, "ID Type", billing.GuestIdType, "Rooms / Nights", billing.RoomCount + " room(s) / " + billing.StayDays + " night(s)");
+            Row(html, "ID verified", "Checked by front desk", "ID Number", "***" + (billing.GuestIdNumber??"").Substring(Math.Max(0,(billing.GuestIdNumber??"").Length-4)));
             Row(html, "Guests", billing.NumberOfGuests.ToString(), "Adults / Children", billing.Adults + " / " + billing.Children);
             if (!string.IsNullOrWhiteSpace(billing.SpecialRequest))
                 Row(html, "Special Request", billing.SpecialRequest, "Status", "Checked Out");
@@ -64,12 +65,15 @@ namespace BusinessLogic
             html.Append("<h2>Charges</h2><table><tr><th>Description</th><th class='right'>Rate</th><th class='right'>Qty</th><th class='right'>Amount</th></tr>");
             html.Append("<tr><td>Room Charges (").Append(billing.RoomCount).Append(" room(s))</td><td class='right'>PHP ").Append(M(billing.RoomRate)).Append(" / night</td><td class='right'>").Append(billing.StayDays).Append(" night(s)</td><td class='right'>PHP ").Append(M(billing.RoomCharges)).Append("</td></tr>");
             html.Append("<tr><td>Other Charges</td><td class='right'>PHP ").Append(M(billing.OtherCharges)).Append("</td><td class='right'>").Append(billing.OtherCharges > 0m ? "1" : "0").Append("</td><td class='right'>PHP ").Append(M(billing.OtherCharges)).Append("</td></tr>");
-            html.Append("<tr class='total'><td colspan='3'>TOTAL BILL</td><td class='right'>PHP ").Append(M(billing.TotalBill)).Append("</td></tr></table>");
+            html.Append("<tr><td colspan='3'>Reservation deposit already paid (deducted)</td><td class='right'>- PHP ").Append(M(billing.DepositPaid)).Append("</td></tr>");
+            html.Append("<tr class='total'><td colspan='3'>GRAND TOTAL DUE</td><td class='right'>PHP ").Append(M(billing.TotalBill)).Append("</td></tr></table>");
 
             html.Append("<h2>Payment</h2><table>");
             Row(html, "Payment Method", payment.PaymentMethod, "Payment Status", payment.PaymentStatus);
             Row(html, "Amount Due", "PHP " + M(payment.PaymentAmount), "Amount Received", "PHP " + M(payment.AmountReceived));
             Row(html, "Change", "PHP " + M(payment.ChangeAmount), "Processed By", payment.ProcessedBy);
+            if (!string.IsNullOrWhiteSpace(payment.ReferenceNumber))
+                Row(html, "GCash Reference", payment.ReferenceNumber, "", "");
             html.Append("</table>");
 
             html.Append("<div class='footer'>Thank you for staying with ").Append(E(hotelName)).Append(".<br>");

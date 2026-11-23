@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[Reservations]
+﻿CREATE TABLE [dbo].[Reservations]
 (
     [ReservationId] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Reservations] PRIMARY KEY,
     [GuestId] INT NOT NULL,
@@ -13,6 +13,10 @@ CREATE TABLE [dbo].[Reservations]
     [SpecialRequest] NVARCHAR(1000) NULL,
     [ReservationFeeAmount] DECIMAL(18,2) NULL,
     [ReservationFeePaymentMethod] NVARCHAR(30) NULL,
+    [ReservationFeeStatus] NVARCHAR(30) NOT NULL CONSTRAINT [DF_Reservations_FeeStatus] DEFAULT N'Unpaid',
+    [ReservationFeeReference] NVARCHAR(100) NULL,
+    [KeysIssued] BIT NOT NULL CONSTRAINT [DF_Reservations_KeysIssued] DEFAULT 0,
+    [IdentityChecked] BIT NOT NULL CONSTRAINT [DF_Reservations_IdChecked] DEFAULT 0,
     [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [DF_Reservations_CreatedAt] DEFAULT SYSDATETIME(),
     CONSTRAINT [FK_Reservations_Guests] FOREIGN KEY ([GuestId]) REFERENCES [dbo].[Guests]([GuestId]),
     CONSTRAINT [FK_Reservations_Rooms] FOREIGN KEY ([RoomId]) REFERENCES [dbo].[Rooms]([RoomId]),

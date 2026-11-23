@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Model
 {
@@ -10,6 +10,7 @@ namespace Model
         public decimal AmountReceived { get; set; }
         public decimal ChangeAmount { get; set; }
         public string PaymentMethod { get; set; }
+        public string ReferenceNumber { get; set; }
         public string PaymentStatus { get; set; }
         public string ProcessedBy { get; set; }
 
