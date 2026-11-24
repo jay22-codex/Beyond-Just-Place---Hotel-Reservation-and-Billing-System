@@ -32,6 +32,7 @@ namespace UI
                 using(GuestRoomAvailabilityForm form=new GuestRoomAvailabilityForm()) form.ShowDialog(this);
                 RefreshReservations();
             };
+            UiPolish.Apply(this);
             Shown += (s,e) => RefreshReservations();
         }
         private void RefreshReservations()

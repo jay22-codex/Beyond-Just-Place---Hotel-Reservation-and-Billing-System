@@ -9,7 +9,9 @@ namespace UI
     public partial class AdminDashboard : Form
     {
         private readonly AdminDataService adminService = new AdminDataService();
+        private readonly ReservationOverviewService reservationOverview = new ReservationOverviewService();
         private readonly Timer refreshTimer = new Timer();
+        private bool loadingDashboard;
 
         public AdminDashboard()
         {
@@ -19,6 +21,18 @@ namespace UI
             refreshTimer.Interval = 5000;
             refreshTimer.Tick += (s, e) => RefreshDashboard(false);
 
+            Resize += (s, e) => ArrangeAdminDashboard();
+            btnAdminSearch.Click += (s, e) => RefreshDashboard(true);
+            txtAdminSearch.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter)
+                {
+                    e.SuppressKeyPress = true;
+                    RefreshDashboard(true);
+                }
+            };
+            UiPolish.Apply(this);
+            ArrangeAdminDashboard();
             btnDashboard.Click -= BtnDashboard_Click;
             btnDashboard.Click += BtnDashboard_Click;
             btnRoomTypes.Click += (s,e)=>{if(!CurrentUserSession.RequireAdmin(this))return;
@@ -59,6 +73,8 @@ namespace UI
 
         private void RefreshDashboard(bool showError)
         {
+            if (loadingDashboard || IsDisposed) return;
+            loadingDashboard = true;
             try
             {
                 AdminDashboardSnapshot snapshot = adminService.GetDashboardSnapshot();
@@ -67,22 +83,59 @@ namespace UI
                 label5.Text = snapshot.PendingReservations.ToString();
                 label6.Text = "PHP " + snapshot.TotalRevenue.ToString("N2");
 
-                listBoxLatestActivity.BeginUpdate();
-                try
+                int selectedId = 0;
+                if (dgvAdminReservations.CurrentRow != null)
                 {
-                    listBoxLatestActivity.Items.Clear();
-                    foreach (DataRow row in snapshot.LatestActivity.Rows)
-                    {
-                        listBoxLatestActivity.Items.Add(
-                            "Reservation #" + row["Reservation ID"] +
-                            " - " + row["Guest"] +
-                            " - Room " + row["Room"] +
-                            " - " + row["Status"]);
-                    }
+                    DataRowView previous = dgvAdminReservations.CurrentRow.DataBoundItem as DataRowView;
+                    if (previous != null)
+                        selectedId = Convert.ToInt32(previous["ReservationId"]);
                 }
-                finally
+                DataTable table = reservationOverview.GetReservations(txtAdminSearch.Text.Trim());
+                dgvAdminReservations.DataSource = table;
+                string[] columns = {
+                    "ReservationId", "GuestName", "ContactNumber", "Email", "RoomNumbers",
+                    "RoomCount", "BedCount", "NumberOfGuests", "Adults", "Children",
+                    "CheckInDate", "CheckOutDate", "IdVerified", "DepositStatus",
+                    "ReservationStatus"
+                };
+                foreach (DataGridViewColumn column in dgvAdminReservations.Columns)
+                    column.Visible = Array.IndexOf(columns, column.Name) >= 0;
+                SetAdminHeader("ReservationId", "Booking #");
+                SetAdminHeader("GuestName", "Guest");
+                SetAdminHeader("ContactNumber", "Contact");
+                SetAdminHeader("RoomNumbers", "Room(s)");
+                SetAdminHeader("RoomCount", "Room qty");
+                SetAdminHeader("NumberOfGuests", "Guests");
+                SetAdminHeader("BedCount", "Beds");
+                SetAdminHeader("CheckInDate", "Check-in");
+                SetAdminHeader("CheckOutDate", "Check-out");
+                SetAdminHeader("IdVerified", "ID checked");
+                SetAdminHeader("DepositStatus", "Deposit");
+                SetAdminHeader("ReservationStatus", "Status");
+                foreach (DataGridViewColumn column in dgvAdminReservations.Columns)
                 {
-                    listBoxLatestActivity.EndUpdate();
+                    if (!column.Visible) continue;
+                    column.FillWeight = 76;
+                    column.MinimumWidth = 60;
+                }
+                SetAdminColumn("GuestName", 150, 130);
+                SetAdminColumn("ContactNumber", 115, 100);
+                SetAdminColumn("Email", 135, 120);
+                SetAdminColumn("RoomNumbers", 110, 95);
+                SetAdminColumn("CheckInDate", 98, 92);
+                SetAdminColumn("CheckOutDate", 98, 92);
+                SetAdminColumn("ReservationStatus", 100, 88);
+                if (selectedId > 0)
+                {
+                    foreach (DataGridViewRow gridRow in dgvAdminReservations.Rows)
+                    {
+                        DataRowView record = gridRow.DataBoundItem as DataRowView;
+                        if (record != null && Convert.ToInt32(record["ReservationId"]) == selectedId)
+                        {
+                            dgvAdminReservations.CurrentCell = gridRow.Cells["GuestName"];
+                            break;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -91,6 +144,47 @@ namespace UI
                     MessageBox.Show(ex.Message, "Admin Dashboard Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally { loadingDashboard = false; }
+        }
+
+        private void SetAdminHeader(string column, string caption)
+        {
+            if (dgvAdminReservations.Columns.Contains(column))
+                dgvAdminReservations.Columns[column].HeaderText = caption;
+        }
+        private void SetAdminColumn(string column, float weight, int minimumWidth)
+        {
+            if (dgvAdminReservations.Columns.Contains(column))
+            {
+                dgvAdminReservations.Columns[column].FillWeight = weight;
+                dgvAdminReservations.Columns[column].MinimumWidth = minimumWidth;
+            }
+        }
+        private void ArrangeAdminDashboard()
+        {
+            if (ClientSize.Width < 720) return;
+            int x = 253;
+            int width = Math.Max(700, ClientSize.Width - x - 27);
+            int gap = 15;
+            int cardWidth = (width - gap * 3) / 4;
+            GroupBox[] cards = {groupBoxTotalReservation, groupBox1, groupBox2, groupBox3};
+            Label[] totals = {label3, label4, label5, label6};
+            for (int i = 0; i < cards.Length; i++)
+            {
+                cards[i].SetBounds(x + i * (cardWidth + gap), 88, cardWidth, 154);
+                totals[i].SetBounds(10, 45, cardWidth - 20, 87);
+                totals[i].Font = new Font("Arial", i == 3 ? 21F : 29F, FontStyle.Bold);
+            }
+            groupBox5.SetBounds(x, 257, width, 117);
+            groupBox4.SetBounds(x, 386, width, Math.Max(235, ClientSize.Height - 408));
+            Button[] buttons = {button1, button2, button3, button4};
+            int buttonWidth = Math.Max(115, (width - 65) / 4);
+            for (int i = 0; i < buttons.Length; i++)
+                buttons[i].SetBounds(16 + i * (buttonWidth + 11), 34, buttonWidth, 60);
+            txtAdminSearch.SetBounds(110, 35, Math.Max(200, width - 295), 27);
+            btnAdminSearch.SetBounds(width - 170, 31, 146, 32);
+            dgvAdminReservations.SetBounds(16, 73, width - 32,
+                Math.Max(120, groupBox4.Height - 90));
         }
 
         private void ManageRooms_Click(object sender, EventArgs e)
@@ -330,24 +424,69 @@ namespace UI
 
         private UserEditorData ShowUserEditor(UserEditorData existing)
         {
-            Form form = CreateDialog(existing == null ? "Add User" : "Edit User", 470, 300);
-            TableLayoutPanel table = CreateEditorTable(3);
+            Form form = CreateDialog(existing == null ? "Add User Account" : "Edit User Account", 530, 382);
+            form.MinimumSize = new Size(530, 382);
+            TableLayoutPanel table = CreateEditorTable(4);
             TextBox username = AddEditorText(table, 0, "Username:", existing == null ? "" : existing.Username);
             TextBox password = AddEditorText(table, 1,
                 existing == null ? "Password:" : "New Password:", "");
             password.UseSystemPasswordChar = true;
+            TextBox confirmPassword = AddEditorText(table, 2, "Confirm Password:", "");
+            confirmPassword.Name = "txtConfirmPassword";
+            confirmPassword.UseSystemPasswordChar = true;
             ComboBox role = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Arial", 11F) };
             role.Items.AddRange(new object[] { "Admin", "FrontDesk" });
             role.SelectedItem = existing == null ? "FrontDesk" : existing.Role;
-            AddEditorControl(table, 2, "Role:", role);
+            AddEditorControl(table, 3, "Role:", role);
 
+            Label help = new Label
+            {
+                Dock = DockStyle.Bottom, Height = 37,
+                Padding = new Padding(20, 7, 15, 0),
+                Font = new Font("Arial", 9F),
+                ForeColor = Color.FromArgb(76, 61, 135),
+                Text = existing == null
+                    ? "Enter the same password in both fields (at least 8 characters)."
+                    : "Leave BOTH password fields blank to keep the current password."
+            };
             FlowLayoutPanel actions = CreateActionBar();
-            Button save = CreateActionButton("Save"); Button cancel = CreateActionButton("Cancel");
+            Button save = CreateActionButton("Save User"); Button cancel = CreateActionButton("Cancel");
             actions.Controls.AddRange(new Control[] { save, cancel });
-            form.Controls.Add(table); form.Controls.Add(actions);
+            form.Controls.Add(table); form.Controls.Add(help); form.Controls.Add(actions);
+            form.AcceptButton = save;
+            form.CancelButton = cancel;
             UserEditorData result = null;
             save.Click += (s, e) =>
             {
+                if (string.IsNullOrWhiteSpace(username.Text))
+                {
+                    MessageBox.Show(form, "Username is required.", "Account Validation",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    username.Focus();
+                    return;
+                }
+                if (existing == null && string.IsNullOrWhiteSpace(password.Text))
+                {
+                    MessageBox.Show(form, "Password is required for a new account.", "Account Validation",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    password.Focus();
+                    return;
+                }
+                if (!string.Equals(password.Text, confirmPassword.Text, StringComparison.Ordinal))
+                {
+                    MessageBox.Show(form, "The password and confirmation do not match.", "Account Validation",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    confirmPassword.SelectAll();
+                    confirmPassword.Focus();
+                    return;
+                }
+                if (password.Text.Length > 0 && password.Text.Length < 8)
+                {
+                    MessageBox.Show(form, "Use at least 8 characters for the password.", "Account Validation",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    password.Focus();
+                    return;
+                }
                 result = new UserEditorData
                 {
                     Username = username.Text.Trim(), Password = password.Text,
@@ -404,6 +543,12 @@ namespace UI
                 RowTemplate = { Height = 30 },
                 ColumnHeadersHeight = 38,
                 BackgroundColor = Color.White,
+                EnableHeadersVisualStyles = false,
+                ColumnHeadersDefaultCellStyle = {
+                    BackColor = Color.FromArgb(82, 66, 140), ForeColor = Color.White,
+                    Font = new Font("Arial", 9.5F, FontStyle.Bold) },
+                DefaultCellStyle = { SelectionBackColor = Color.FromArgb(215, 205, 247),
+                    SelectionForeColor = Color.FromArgb(37, 28, 71) },
                 AlternatingRowsDefaultCellStyle = { BackColor = Color.FromArgb(246, 245, 252) },
                 Dock = DockStyle.Fill
             };

@@ -97,6 +97,7 @@
     <Compile Include="CurrentUserSession.cs" />
     <Compile Include="PaymentUiDialogs.cs" />
     <Compile Include="HotelManagementForms.cs" />
+    <Compile Include="UiPolish.cs" />
     <Compile Include="Login.cs">
       <SubType>Form</SubType>
     </Compile>

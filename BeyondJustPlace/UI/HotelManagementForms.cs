@@ -42,7 +42,12 @@ namespace UI
                 SelectionMode=DataGridViewSelectionMode.FullRowSelect,
                 AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill,
                 BackgroundColor=Color.White,RowHeadersVisible=false,RowTemplate={Height=30},
-                ColumnHeadersHeight=38,AlternatingRowsDefaultCellStyle={BackColor=Color.FromArgb(247,246,252)}};
+                ColumnHeadersHeight=38,EnableHeadersVisualStyles=false,
+                ColumnHeadersDefaultCellStyle={BackColor=Color.FromArgb(82,66,140),ForeColor=Color.White,
+                    Font=new Font("Arial",9.5F,FontStyle.Bold)},
+                DefaultCellStyle={SelectionBackColor=Color.FromArgb(215,205,247),
+                    SelectionForeColor=Color.FromArgb(37,28,71)},
+                AlternatingRowsDefaultCellStyle={BackColor=Color.FromArgb(247,246,252)}};
         }
     }
 

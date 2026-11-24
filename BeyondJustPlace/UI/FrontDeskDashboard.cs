@@ -19,6 +19,7 @@ namespace UI
             WindowState = FormWindowState.Maximized;
 
             ConnectNavigation();
+            UiPolish.Apply(this);
         }
 
         private void ConnectNavigation()

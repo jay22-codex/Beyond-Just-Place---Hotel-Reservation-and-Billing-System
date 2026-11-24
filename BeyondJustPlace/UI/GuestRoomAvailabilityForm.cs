@@ -18,6 +18,9 @@ namespace UI
         private readonly List<Panel> cards = new List<Panel>();
         private bool searchValid;
         private bool loaded;
+        private bool searching;
+        private string lastCapacityWarning = "";
+        private readonly Timer availabilityDebounce = new Timer { Interval = 350 };
 
         public GuestRoomAvailabilityForm()
         {
@@ -26,7 +29,13 @@ namespace UI
             dtpArrival.Value = DateTime.Today;
             dtpDeparture.Value = DateTime.Today.AddDays(1);
             btnClose.Click += (s, e) => Close();
-            btnSearch.Click += (s, e) => CheckAvailability();
+            btnSearch.Click += (s, e) => CheckAvailability(true);
+            availabilityDebounce.Tick += (s, e) =>
+            {
+                availabilityDebounce.Stop();
+                if (!IsDisposed && loaded) CheckAvailability(true);
+            };
+            FormClosed += (s, e) => availabilityDebounce.Dispose();
             btnContinue.Click += Continue_Click;
             dtpArrival.ValueChanged += InputsChanged;
             dtpDeparture.ValueChanged += InputsChanged;
@@ -37,7 +46,8 @@ namespace UI
             selectedList.Resize += (s, e) => ResizeSelectedRows();
             mainSplit.SizeChanged += (s, e) => AdjustSplit();
             header.Resize += (s, e) => btnClose.Left = header.ClientSize.Width - btnClose.Width - 35;
-            Shown += (s, e) => { if (!loaded) { loaded = true; AdjustSplit(); CheckAvailability(); } };
+            Shown += (s, e) => { if (!loaded) { loaded = true; AdjustSplit(); CheckAvailability(false); } };
+            UiPolish.Apply(this);
             UpdateSelected();
         }
 
@@ -62,24 +72,25 @@ namespace UI
             available.Clear();
             availableList.Controls.Clear();
             cards.Clear();
-            lblResults.Text = "Dates or guest details changed — check availability again";
+            lblResults.Text = "Checking rooms for " +
+                ((int)numAdults.Value + (int)numChildren.Value) + " guest(s)...";
             UpdateSelected();
+            availabilityDebounce.Stop();
+            availabilityDebounce.Start();
         }
 
-        private void CheckAvailability()
+        private void CheckAvailability(bool showWarning)
         {
-            if (dtpArrival.Value.Date < DateTime.Today)
+            if (searching || IsDisposed) return;
+            if (dtpArrival.Value.Date < DateTime.Today ||
+                dtpDeparture.Value.Date <= dtpArrival.Value.Date)
             {
-                MessageBox.Show("Choose a check-in date of today or later.", "Check dates",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                searchValid = false;
+                availableList.Controls.Clear();
+                lblResults.Text = "Choose valid dates: check-out must be after check-in.";
                 return;
             }
-            if (dtpDeparture.Value.Date <= dtpArrival.Value.Date)
-            {
-                MessageBox.Show("Check-out must be later than check-in.", "Check dates",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
+            searching = true;
             try
             {
                 btnSearch.Enabled = false;
@@ -89,33 +100,96 @@ namespace UI
                 cards.Clear();
                 availableList.Controls.Clear();
 
+                int guests = (int)numAdults.Value + (int)numChildren.Value;
+                int requestedRooms = (int)numRooms.Value;
                 DataTable types = hotel.GetRoomTypes(false);
+                Dictionary<string, DataRow> definitions = new Dictionary<string, DataRow>(StringComparer.OrdinalIgnoreCase);
+                List<AvailableRoomInfo> allRooms = new List<AvailableRoomInfo>();
                 foreach (DataRow row in types.Rows)
                 {
                     string type = Convert.ToString(row["TypeName"]);
                     List<AvailableRoomInfo> rooms = reservations.GetAvailableRooms(
-                        dtpArrival.Value.Date, dtpDeparture.Value.Date, type);
+                        dtpArrival.Value.Date, dtpDeparture.Value.Date, type)
+                        .Where(r => r.RoomCapacity.GetValueOrDefault() > 0).ToList();
                     available[type] = rooms;
-                    AddRoomCard(type, row, rooms);
+                    definitions[type] = row;
+                    allRooms.AddRange(rooms);
                 }
-                searchValid = true;
-                lblResults.Text = "Room types & rates  •  " +
-                    (dtpDeparture.Value.Date - dtpArrival.Value.Date).Days +
-                    " night(s)  •  prices are based on your dates";
+
+                // The largest N available rooms give an upper bound on capacity.
+                // This supports bookings containing a mixture of room types.
+                int maxCapacity = allRooms.OrderByDescending(r => r.RoomCapacity.GetValueOrDefault())
+                    .Take(requestedRooms).Sum(r => r.RoomCapacity.GetValueOrDefault());
+                bool enoughRooms = allRooms.Count >= requestedRooms;
+                bool canFit = enoughRooms && maxCapacity >= guests;
+
+                if (canFit)
+                {
+                    foreach (DataRow row in types.Rows)
+                    {
+                        string type = Convert.ToString(row["TypeName"]);
+                        List<AvailableRoomInfo> candidates;
+                        if (!available.TryGetValue(type, out candidates) || candidates.Count == 0)
+                            continue;
+                        // Show a room type only if at least one of its available rooms can
+                        // be combined with the remaining requested rooms to fit the group.
+                        bool fitsInCombination = candidates.Any(candidate =>
+                            candidate.RoomCapacity.GetValueOrDefault() +
+                            allRooms.Where(r => r.RoomId != candidate.RoomId)
+                                .OrderByDescending(r => r.RoomCapacity.GetValueOrDefault())
+                                .Take(requestedRooms - 1)
+                                .Sum(r => r.RoomCapacity.GetValueOrDefault()) >= guests);
+                        if (fitsInCombination)
+                            AddRoomCard(type, row, candidates);
+                    }
+                }
+                searchValid = canFit;
+                lblResults.Text = "Rooms for " + guests + " guest(s)  •  " + requestedRooms +
+                    " room(s)  •  " + (dtpDeparture.Value.Date - dtpArrival.Value.Date).Days +
+                    " night(s)  •  rates based on your dates";
                 if (types.Rows.Count == 0)
-                    ShowEmpty("No active room types are currently configured. Please contact the hotel.");
+                    ShowEmpty("No active room types have been set up by Admin.");
+                else if (!canFit)
+                    ShowEmpty("No available room combination can fit " + guests +
+                        " guest(s) in " + requestedRooms + " room(s) on those dates. " +
+                        "Please increase Rooms wanted or choose different dates.");
+                else if (cards.Count == 0)
+                    ShowEmpty("No matching room types are available for these dates.");
                 UpdateSelected();
                 ResizeCards();
+                if (!canFit && showWarning)
+                {
+                    string signature = dtpArrival.Value.Date.ToString("yyyyMMdd") + "-" +
+                        dtpDeparture.Value.Date.ToString("yyyyMMdd") + ":" + guests + ":" + requestedRooms;
+                    if (signature != lastCapacityWarning)
+                    {
+                        lastCapacityWarning = signature;
+                        string explanation = !enoughRooms
+                            ? "Only " + allRooms.Count + " room(s) are free for the selected dates."
+                            : "The largest " + requestedRooms + " room(s) only fit " +
+                                maxCapacity + " guest(s), but your group has " + guests + ".";
+                        MessageBox.Show(this,
+                            "No available rooms can accommodate your group.\r\n\r\n" +
+                            explanation +
+                            "\r\n\r\nIncrease Rooms wanted or change the dates.",
+                            "Guest capacity warning",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                    }
+                }
+                else if (canFit)
+                    lastCapacityWarning = "";
             }
             catch (Exception ex)
             {
                 searchValid = false;
-                ShowEmpty("Availability could not be loaded. Confirm LocalDB is running and try again.");
-                MessageBox.Show(ex.Message, "Room availability error", MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                ShowEmpty("Room availability could not be loaded. Check LocalDB and try again.");
+                MessageBox.Show(this, ex.Message, "Room availability error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
+                searching = false;
                 btnSearch.Enabled = true;
                 Cursor = Cursors.Default;
             }

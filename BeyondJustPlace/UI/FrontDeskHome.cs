@@ -21,6 +21,7 @@ namespace UI
             Resize += (s,e) => ArrangeCards();
             ArrangeCards();
             ConfigureTable();
+            UiPolish.Apply(this);
         }
         protected override void OnShown(EventArgs e)
         {base.OnShown(e);LoadDashboard(true);refreshTimer.Start();}

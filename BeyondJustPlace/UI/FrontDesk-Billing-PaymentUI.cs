@@ -40,6 +40,7 @@ namespace UI
         public FrontDesk_Billing_PaymentUI(BillingInfo billing)
         {
             InitializeComponent();
+            UiPolish.Apply(this);
 
             selectedBilling = billing;
             AddChargeControls();
