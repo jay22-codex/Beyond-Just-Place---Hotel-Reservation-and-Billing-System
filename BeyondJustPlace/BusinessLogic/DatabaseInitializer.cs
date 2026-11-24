@@ -435,6 +435,52 @@ UPDATE rm SET rm.BedCount=COALESCE(rm.BedCount,t.BedCount),
     rm.Description=COALESCE(rm.Description,t.Description)
 FROM dbo.Rooms rm INNER JOIN dbo.RoomTypes t ON t.TypeName=rm.RoomType;
 ");
+
+                // Maintain exactly at least 20 numbered records per default type.
+                // Existing rooms and their reservations are never deleted or renumbered.
+                // The seed is repeatable when teammates launch on their own LocalDB.
+                Execute(connection, @"
+DECLARE @roomType NVARCHAR(100), @prefix NVARCHAR(4);
+DECLARE @rate DECIMAL(18,2), @capacity INT, @beds INT, @sqm INT, @fee DECIMAL(18,2);
+DECLARE @description NVARCHAR(500);
+DECLARE room_types_to_seed CURSOR LOCAL FAST_FORWARD FOR
+SELECT t.TypeName,
+       CASE t.TypeName
+           WHEN N'Standard' THEN N'11'
+           WHEN N'Deluxe'   THEN N'21'
+           WHEN N'Family'   THEN N'31'
+           WHEN N'Suite'    THEN N'41' END,
+       t.Rate, t.Capacity, t.BedCount, t.SizeSqm, t.ReservationFee, t.Description
+FROM dbo.RoomTypes t
+WHERE t.TypeName IN (N'Standard',N'Deluxe',N'Family',N'Suite');
+OPEN room_types_to_seed;
+FETCH NEXT FROM room_types_to_seed
+  INTO @roomType,@prefix,@rate,@capacity,@beds,@sqm,@fee,@description;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    DECLARE @current INT = (SELECT COUNT(*) FROM dbo.Rooms WHERE RoomType=@roomType);
+    DECLARE @seq INT = 1;
+    WHILE @current < 20 AND @seq < 900
+    BEGIN
+        DECLARE @roomNumber NVARCHAR(20) = @prefix + RIGHT(N'00' + CONVERT(NVARCHAR(10),@seq),3);
+        IF NOT EXISTS (SELECT 1 FROM dbo.Rooms WHERE RoomNumber=@roomNumber)
+        BEGIN
+            INSERT INTO dbo.Rooms
+                (RoomNumber,RoomType,RoomRate,RoomStatus,RoomCapacity,
+                 ReservationFee,BedCount,SizeSqm,Description,IsActive)
+            VALUES
+                (@roomNumber,@roomType,@rate,N'Available',@capacity,
+                 @fee,@beds,@sqm,@description,1);
+            SET @current = @current + 1;
+        END;
+        SET @seq = @seq + 1;
+    END;
+    FETCH NEXT FROM room_types_to_seed
+      INTO @roomType,@prefix,@rate,@capacity,@beds,@sqm,@fee,@description;
+END;
+CLOSE room_types_to_seed;
+DEALLOCATE room_types_to_seed;
+");
             }
         }
 

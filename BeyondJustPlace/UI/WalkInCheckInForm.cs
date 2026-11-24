@@ -20,6 +20,7 @@ namespace UI
         public WalkInCheckInForm()
         {
             InitializeComponent();
+            UiPolish.Apply(this);
             dtpIn.Value = DateTime.Today;
             dtpOut.Value = DateTime.Today.AddDays(1);
             cmbIdType.Items.AddRange(new object[]{"National ID","Passport","Driver's License","Student ID","Other"});

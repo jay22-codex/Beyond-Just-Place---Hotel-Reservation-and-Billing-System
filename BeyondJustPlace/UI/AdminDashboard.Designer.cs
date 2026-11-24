@@ -46,7 +46,10 @@
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.label6 = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.listBoxLatestActivity = new System.Windows.Forms.ListBox();
+            this.dgvAdminReservations = new System.Windows.Forms.DataGridView();
+            this.txtAdminSearch = new System.Windows.Forms.TextBox();
+            this.btnAdminSearch = new System.Windows.Forms.Button();
+            this.lblAdminSearch = new System.Windows.Forms.Label();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.button4 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
@@ -57,6 +60,7 @@
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvAdminReservations)).BeginInit();
             this.groupBox5.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -248,7 +252,10 @@
             // groupBox4
             // 
             this.groupBox4.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.groupBox4.Controls.Add(this.listBoxLatestActivity);
+            this.groupBox4.Controls.Add(this.dgvAdminReservations);
+            this.groupBox4.Controls.Add(this.txtAdminSearch);
+            this.groupBox4.Controls.Add(this.btnAdminSearch);
+            this.groupBox4.Controls.Add(this.lblAdminSearch);
             this.groupBox4.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox4.Location = new System.Drawing.Point(253, 308);
             this.groupBox4.Name = "groupBox4";
@@ -256,19 +263,53 @@
             this.groupBox4.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
             this.groupBox4.TabIndex = 11;
             this.groupBox4.TabStop = false;
-            this.groupBox4.Text = "Latest Activity";
+            this.groupBox4.Text = "Reservation Records - Guest & Booking Details";
             // 
-            // listBoxLatestActivity
-            // 
-            this.listBoxLatestActivity.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.listBoxLatestActivity.FormattingEnabled = true;
-            this.listBoxLatestActivity.ItemHeight = 18;
-            this.listBoxLatestActivity.Location = new System.Drawing.Point(22, 36);
-            this.listBoxLatestActivity.Name = "listBoxLatestActivity";
-            this.listBoxLatestActivity.Size = new System.Drawing.Size(745, 578);
-            this.listBoxLatestActivity.Anchor = (System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right);
-            this.listBoxLatestActivity.TabIndex = 0;
-            // 
+            // dgvAdminReservations
+            //
+            this.dgvAdminReservations.AllowUserToAddRows = false;
+            this.dgvAdminReservations.AllowUserToDeleteRows = false;
+            this.dgvAdminReservations.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dgvAdminReservations.BackgroundColor = System.Drawing.Color.White;
+            this.dgvAdminReservations.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.dgvAdminReservations.ColumnHeadersHeight = 37;
+            this.dgvAdminReservations.Dock = System.Windows.Forms.DockStyle.None;
+            this.dgvAdminReservations.Location = new System.Drawing.Point(17, 70);
+            this.dgvAdminReservations.MultiSelect = false;
+            this.dgvAdminReservations.Name = "dgvAdminReservations";
+            this.dgvAdminReservations.ReadOnly = true;
+            this.dgvAdminReservations.RowHeadersVisible = false;
+            this.dgvAdminReservations.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dgvAdminReservations.Size = new System.Drawing.Size(747, 562);
+            this.dgvAdminReservations.TabIndex = 0;
+            //
+            // lblAdminSearch
+            //
+            this.lblAdminSearch.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold);
+            this.lblAdminSearch.Location = new System.Drawing.Point(20, 33);
+            this.lblAdminSearch.Name = "lblAdminSearch";
+            this.lblAdminSearch.Size = new System.Drawing.Size(89, 29);
+            this.lblAdminSearch.Text = "Search:";
+            this.lblAdminSearch.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //
+            // txtAdminSearch
+            //
+            this.txtAdminSearch.Font = new System.Drawing.Font("Arial", 11F);
+            this.txtAdminSearch.Location = new System.Drawing.Point(110, 35);
+            this.txtAdminSearch.Name = "txtAdminSearch";
+            this.txtAdminSearch.Size = new System.Drawing.Size(410, 24);
+            this.txtAdminSearch.TabIndex = 1;
+            //
+            // btnAdminSearch
+            //
+            this.btnAdminSearch.BackColor = System.Drawing.Color.FromArgb(224, 224, 224);
+            this.btnAdminSearch.Location = new System.Drawing.Point(530, 31);
+            this.btnAdminSearch.Name = "btnAdminSearch";
+            this.btnAdminSearch.Size = new System.Drawing.Size(110, 30);
+            this.btnAdminSearch.TabIndex = 2;
+            this.btnAdminSearch.Text = "Search / Refresh";
+            this.btnAdminSearch.UseVisualStyleBackColor = false;
+            //
             // groupBox5
             // 
             this.groupBox5.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
@@ -362,7 +403,9 @@
             this.groupBox2.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvAdminReservations)).EndInit();
             this.groupBox4.ResumeLayout(false);
+            this.groupBox4.PerformLayout();
             this.groupBox5.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -389,7 +432,10 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.GroupBox groupBox4;
-        private System.Windows.Forms.ListBox listBoxLatestActivity;
+        private System.Windows.Forms.DataGridView dgvAdminReservations;
+        private System.Windows.Forms.TextBox txtAdminSearch;
+        private System.Windows.Forms.Button btnAdminSearch;
+        private System.Windows.Forms.Label lblAdminSearch;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.Button button3;

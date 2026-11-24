@@ -19,6 +19,7 @@ namespace UI
         public FrontDesk_CheckIn_CheckOut()
         {
             InitializeComponent();
+            UiPolish.Apply(this);
 
             btnSearchCheckIn.Click += btnSearch_Click;
             button1.Click += btnConfirmCheckIn_Click;
